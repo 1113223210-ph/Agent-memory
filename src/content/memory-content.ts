@@ -42,6 +42,14 @@ export interface ImplementationRoute {
   caveat: string;
 }
 
+export interface PlainMechanismGuide {
+  title: string;
+  analogy: string;
+  plainIdea: string;
+  howItWorks: string;
+  easyMisread: string;
+}
+
 export interface DetailSection {
   title: string;
   body: string;
@@ -82,6 +90,7 @@ export interface Dimension {
   summaryLabel: string;
   projectComparisons?: ProjectComparison[];
   implementationRoutes?: ImplementationRoute[];
+  plainMechanismGuides?: PlainMechanismGuide[];
 }
 
 export const mechanismDetails: MechanismDetail[] = [
@@ -2406,13 +2415,13 @@ export const dimensions: Dimension[] = [
         caveat: "适合关系密集场景；如果业务只是普通问答，图谱可能太重。",
       },
       {
-        title: "Workflow State / Checkpoint Store",
+        title: "Workflow / Search State Memory",
         label: "State recovery",
-        projects: ["LangGraph"],
-        whatItSolves: "让长流程 agent 能恢复线程状态，并把跨线程信息放进 store。",
-        howToRead: "看 checkpoint 保存什么、store 保存什么、thread state 和长期 memory 如何分界。",
-        typicalStack: "Checkpoint saver + namespace store + optional semantic search。",
-        caveat: "checkpoint 解决状态恢复，不会自动替你抽取长期事实。",
+        projects: ["LangGraph", "Harness-1"],
+        whatItSolves: "让长流程 agent 能恢复线程状态，也让搜索 agent 能持续管理候选文档、证据、验证记录和上下文预算。",
+        howToRead: "看 checkpoint、store、evidence board、candidate set 分别保存什么，以及它们如何回到当前 prompt。",
+        typicalStack: "Checkpoint saver + namespace store + evidence state + budget-aware context。",
+        caveat: "这类机制解决状态和证据管理，不会自动替你抽取长期用户偏好。",
       },
       {
         title: "Coding Agent Session / Workspace Memory",
@@ -2431,6 +2440,57 @@ export const dimensions: Dimension[] = [
         howToRead: "看经验什么时候写入、如何验证、如何复用，以及失败经验如何被修正或遗忘。",
         typicalStack: "Reflection + skill library + episodic memory + validation / retrieval。",
         caveat: "最有想象力，也最难评估；没有验证闭环时，很容易把坏经验沉淀下来。",
+      },
+    ],
+    plainMechanismGuides: [
+      {
+        title: "长期记忆服务：像一个会帮你整理的通讯录和笔记库",
+        analogy: "你告诉它几件事，它不会只把原话贴进本子，而是提炼成“这个用户喜欢什么、项目是什么、以后可能会用到什么”。",
+        plainIdea: "把重要事实从对话里抽出来，变成以后能搜索、能更新、能删除的长期记录。",
+        howItWorks: "通常先用 LLM 抽取事实，再做 embedding，存进向量库/图谱/数据库；下次根据问题把相关记忆找回来。",
+        easyMisread: "不是所有聊天记录都该写进去。临时情绪、一次性指令、错误工具输出如果乱写，就会变成记忆污染。",
+      },
+      {
+        title: "分层记忆：像桌面、抽屉和档案馆分工",
+        analogy: "正在用的纸放桌面，常用信息放抽屉，旧资料放档案馆。不是所有东西都摊在眼前。",
+        plainIdea: "把记忆按使用频率和重要程度分层：核心记忆常驻，历史资料按需检索，旧对话必要时摘要。",
+        howItWorks: "core memory 直接进 prompt；archival memory 或 passages 通过检索进入；上下文太长时由 summary 接住旧内容。",
+        easyMisread: "分层不是越多越好。层多之后最怕同一条信息在多个地方版本不一致。",
+      },
+      {
+        title: "框架接口：像给不同记忆后端准备的插座",
+        analogy: "墙上有统一插座，台灯、电脑、充电器都能插，但插座本身不等于电器已经帮你选好了。",
+        plainIdea: "框架先规定 memory 怎么接入 agent，再让你替换列表、向量库、Redis、Mem0 等不同后端。",
+        howItWorks: "agent 推理前调用 memory.update_context 或类似接口，把检索结果塞进当前上下文。",
+        easyMisread: "有接口不代表有完整 memory 系统。写入策略、去重、排序、遗忘通常还得自己设计。",
+      },
+      {
+        title: "图谱记忆：像案件墙上的人物关系和时间线",
+        analogy: "不是只记一堆便签，而是把谁认识谁、哪件事导致哪件事、什么时候发生，都用线连起来。",
+        plainIdea: "当记忆重点是实体、关系和变化过程时，用图比单纯文本块更容易表达。",
+        howItWorks: "从文本/事件里抽取实体和关系，写成节点和边；查询时结合图遍历、关键词、向量和重排。",
+        easyMisread: "不是所有应用都需要图谱。如果只是普通文档问答，强行建图可能更重、更难维护。",
+      },
+      {
+        title: "状态/证据记忆：像任务进度板和搜索证据板",
+        analogy: "做项目时你会有 todo 看板；做调查时你会有候选资料、已采纳证据、待验证线索。Harness-1 这类就是把这些板子外置出来。",
+        plainIdea: "把 agent 当前做到哪、哪些证据可信、哪些候选还没验证、预算还剩多少，放在模型外面管理。",
+        howItWorks: "workflow agent 用 checkpoint/store 恢复状态；search agent 用 evidence state 维护候选文档、证据链接、验证记录和上下文预算。",
+        easyMisread: "这不是用户长期画像。它主要让当前任务更稳、更可追踪，尤其适合长流程和搜索任务。",
+      },
+      {
+        title: "Coding agent 记忆：像程序员的工作台和任务日志",
+        analogy: "程序员会看当前文件、错误日志、git diff、项目规范、todo；coding agent 也需要这些东西，而不只是聊天历史。",
+        plainIdea: "记住当前仓库、用户要求、工具输出、已改文件、失败命令和下一步计划，让代码任务不断线。",
+        howItWorks: "通过 session history、workspace files、AGENTS.md/skills、task state、context compaction 一起组成工作记忆。",
+        easyMisread: "它当然有 memory 机制，但不等于自动长期记住用户偏好或跨项目沉淀经验。",
+      },
+      {
+        title: "经验/技能记忆：像把踩坑记录变成下次可用的攻略",
+        analogy: "打游戏通关后，你不只是记得发生过什么，还会写下“下次遇到这个怪该怎么打”。",
+        plainIdea: "从成功/失败轨迹中提炼可复用经验、策略、代码片段或 skill，让 agent 下次做得更好。",
+        howItWorks: "系统保存任务轨迹和反馈，做 reflection 或 consolidation，再把经验放进 skill library 或经验库里检索复用。",
+        easyMisread: "最难的是验证。坏经验如果被正式沉淀，agent 会越来越自信地重复错误。",
       },
     ],
     projectComparisons: [
@@ -2583,13 +2643,14 @@ export const dimensions: Dimension[] = [
     deepDive: [
       {
         title: "先把开源项目按路线合并，而不是混在一起比",
-        body: "这些项目都和 memory 有关，但它们站的位置不同。更清楚的分法不是按项目名平铺，而是先合并成长期记忆服务、分层 runtime、framework interface、graph memory、workflow state、coding continuity、experience / skill evolution 这几条路线。",
+        body: "这些项目都和 memory 有关，但它们站的位置不同。更清楚的分法不是按项目名平铺，而是先合并成长期记忆服务、分层 runtime、framework interface、graph memory、workflow/search state、coding continuity、experience / skill evolution 这几条路线。",
         bullets: [
           "长期 memory service 关心事实、偏好、经验能不能跨会话存在。",
           "分层 runtime 关心哪些记忆常驻、哪些检索、哪些摘要。",
           "framework interface 关心 memory 如何接入 agent 生命周期。",
           "graph memory 关心实体、关系、时间变化能不能被表达和检索。",
-          "workflow state 和 coding continuity 关心任务状态、工具输出和上下文爆掉后能不能继续。",
+          "workflow/search state 关心任务进度、候选证据、验证记录和上下文预算能不能被外置管理。",
+          "coding continuity 关心仓库规则、工具输出和上下文爆掉后代码任务能不能继续。",
           "experience / skill evolution 关心经验能不能被验证、沉淀和复用。",
         ],
       },

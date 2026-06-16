@@ -8,6 +8,7 @@ import { MechanismGrid } from "@/components/mechanism-grid";
 import { MechanismDetailDialog } from "@/components/mechanism-detail-dialog";
 import { ProjectComparisonTable } from "@/components/project-comparison-table";
 import { ImplementationRouteMap } from "@/components/implementation-route-map";
+import { PlainMechanismGuide } from "@/components/plain-mechanism-guide";
 
 export function DetailShell({ dimension }: { dimension: Dimension }) {
   const [activeMechanismKey, setActiveMechanismKey] = useState<string | null>(null);
@@ -179,6 +180,9 @@ export function DetailShell({ dimension }: { dimension: Dimension }) {
         <>
           {dimension.implementationRoutes ? (
             <ImplementationRouteMap routes={dimension.implementationRoutes} />
+          ) : null}
+          {dimension.plainMechanismGuides ? (
+            <PlainMechanismGuide items={dimension.plainMechanismGuides} />
           ) : null}
           <ProjectComparisonTable items={dimension.projectComparisons} />
         </>
