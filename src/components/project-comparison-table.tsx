@@ -4,10 +4,10 @@ export function ProjectComparisonTable({ items }: { items: ProjectComparison[] }
   return (
     <section className="section-shell rounded-[1.75rem] p-6">
       <div className="text-xs uppercase tracking-[0.24em] text-zinc-500">Code Comparison</div>
-      <h2 className="mt-3 text-3xl font-semibold text-white">把源码实现路线放在同一张表里看</h2>
+      <h2 className="mt-3 text-3xl font-semibold text-white">本地已核源码项目对照表</h2>
       <p className="mt-4 max-w-4xl text-sm leading-8 text-zinc-300">
-        这张表不是 star 排行榜，而是看每个项目到底把 memory 放在哪一层：有人做成独立服务，有人做成框架接口，
-        有人主要解决会话压缩和状态恢复。横向比较时，重点看写入、读取、存储和风险是否匹配你的 agent 类型。
+        上面的路线地图可以容纳更多候选项目；这张表更像源码附录，只放当前本地已经拉取或已做代码级核验的代表项目。
+        横向比较时，重点看写入、读取、存储和风险是否匹配你的 agent 类型。
       </p>
 
       <div className="mt-6 overflow-x-auto rounded-3xl border border-zinc-800 bg-zinc-950/55">

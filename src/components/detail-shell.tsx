@@ -7,6 +7,7 @@ import { dimensions, getMechanismDetail, type Dimension } from "@/content/memory
 import { MechanismGrid } from "@/components/mechanism-grid";
 import { MechanismDetailDialog } from "@/components/mechanism-detail-dialog";
 import { ProjectComparisonTable } from "@/components/project-comparison-table";
+import { ImplementationRouteMap } from "@/components/implementation-route-map";
 
 export function DetailShell({ dimension }: { dimension: Dimension }) {
   const [activeMechanismKey, setActiveMechanismKey] = useState<string | null>(null);
@@ -175,7 +176,12 @@ export function DetailShell({ dimension }: { dimension: Dimension }) {
         ) : null}
 
       {dimension.projectComparisons ? (
-        <ProjectComparisonTable items={dimension.projectComparisons} />
+        <>
+          {dimension.implementationRoutes ? (
+            <ImplementationRouteMap routes={dimension.implementationRoutes} />
+          ) : null}
+          <ProjectComparisonTable items={dimension.projectComparisons} />
+        </>
       ) : null}
 
       <section className="space-y-6">
