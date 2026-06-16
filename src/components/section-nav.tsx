@@ -10,7 +10,7 @@ export function SectionNav({ sections }: { sections: Dimension[] }) {
       <div className="glass-card noise-grid rounded-3xl p-4">
         <div className="mb-4 px-2">
           <div className="text-xs uppercase tracking-[0.22em] text-zinc-500">Dimension Map</div>
-          <h2 className="mt-2 text-sm font-semibold text-white">6 个独立页面</h2>
+          <h2 className="mt-2 text-sm font-semibold text-white">{sections.length} 个独立页面</h2>
         </div>
         <nav className="space-y-2">
           {sections.map((section, index) => (

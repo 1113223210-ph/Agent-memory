@@ -6,6 +6,7 @@ import { useState } from "react";
 import { dimensions, getMechanismDetail, type Dimension } from "@/content/memory-content";
 import { MechanismGrid } from "@/components/mechanism-grid";
 import { MechanismDetailDialog } from "@/components/mechanism-detail-dialog";
+import { ProjectComparisonTable } from "@/components/project-comparison-table";
 
 export function DetailShell({ dimension }: { dimension: Dimension }) {
   const [activeMechanismKey, setActiveMechanismKey] = useState<string | null>(null);
@@ -175,6 +176,10 @@ export function DetailShell({ dimension }: { dimension: Dimension }) {
         </div>
         <MechanismGrid accent={dimension.accent} items={dimension.mechanisms} />
       </section>
+
+      {dimension.projectComparisons ? (
+        <ProjectComparisonTable items={dimension.projectComparisons} />
+      ) : null}
 
       <section className="section-shell rounded-[1.75rem] p-6">
         <div className="text-xs uppercase tracking-[0.24em] text-zinc-500">Examples</div>

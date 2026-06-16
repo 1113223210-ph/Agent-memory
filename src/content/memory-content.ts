@@ -20,6 +20,18 @@ export interface MechanismDetail {
   watchOut: string[];
 }
 
+export interface ProjectComparison {
+  project: string;
+  category: string;
+  corePaths: string[];
+  route: string;
+  writePath: string;
+  readPath: string;
+  storage: string;
+  bestFit: string;
+  risk: string;
+}
+
 export interface DetailSection {
   title: string;
   body: string;
@@ -58,6 +70,7 @@ export interface Dimension {
   metrics: string[];
   failureModes: string[];
   summaryLabel: string;
+  projectComparisons?: ProjectComparison[];
 }
 
 export const mechanismDetails: MechanismDetail[] = [
@@ -774,6 +787,144 @@ export const mechanismDetails: MechanismDetail[] = [
       "需要验证、回滚和复盘机制。",
     ],
   },
+  {
+    key: "dedicated-memory-service",
+    title: "Dedicated Memory Service",
+    aliases: ["Dedicated Memory Service", "Memory Service"],
+    oneLiner: "把 memory 做成一个独立服务，专门负责抽取、存储、检索和更新。",
+    explanation:
+      "这类路线不是在 agent 里顺手塞几条历史，而是把 memory 当成独立系统来做。agent 把对话、事件或观察交给 memory service，service 决定怎么抽取事实、怎么去重、怎么更新、怎么在下次召回。",
+    howItWorks: [
+      "接收对话或事件输入，先抽取候选事实或偏好。",
+      "把候选内容写入向量库、关系库或混合存储。",
+      "查询时按用户、作用域、相似度和时间等信号召回。",
+    ],
+    goodFor: [
+      "需要跨应用复用记忆的个人助手或平台。",
+      "希望 memory 能独立迭代、独立观测的系统。",
+      "长期个性化、偏好记忆、用户事实管理。",
+    ],
+    watchOut: [
+      "服务边界一旦设计不好，agent 和 memory 会互相甩锅。",
+      "写入策略不稳时，会很快积累错误事实。",
+      "多用户和多项目场景必须处理好权限和作用域。",
+    ],
+  },
+  {
+    key: "layered-agent-memory",
+    title: "Layered Agent Memory",
+    aliases: ["Layered Agent Memory", "Layered Memory"],
+    oneLiner: "把记忆分成核心、召回、档案、消息等层，每层负责不同距离的信息。",
+    explanation:
+      "分层路线的重点是别让所有记忆挤在一个桶里。经常要用的身份、偏好、任务目标可以放在核心层；大量历史消息或知识片段放在外部层；上下文超限时再做摘要或归档。",
+    howItWorks: [
+      "核心记忆直接进入 prompt，保证稳定可见。",
+      "档案或 archival memory 通过检索按需召回。",
+      "消息历史、摘要和外部知识各有自己的存储与预算。",
+    ],
+    goodFor: [
+      "长期陪伴、项目协作、复杂 agent 平台。",
+      "需要同时管理 profile、历史、知识和任务状态的系统。",
+      "希望 memory 边界清楚、可解释的产品。",
+    ],
+    watchOut: [
+      "层太多会增加维护成本。",
+      "同一条信息如果在多层重复，会出现冲突和更新困难。",
+      "需要明确哪一层是 source of truth。",
+    ],
+  },
+  {
+    key: "temporal-knowledge-graph-memory",
+    title: "Temporal Knowledge Graph Memory",
+    aliases: ["Graph Memory", "Temporal Knowledge Graph Memory", "Knowledge Graph Memory"],
+    oneLiner: "把记忆存成带时间的实体和关系，而不只是相似文本块。",
+    explanation:
+      "图谱记忆关心的是人、项目、事件和它们之间的关系。加上时间维度后，系统不仅能回答“有什么关系”，还可以区分旧关系、新关系、关系什么时候发生变化。",
+    howItWorks: [
+      "从事件或文本里抽取实体、关系和时间信息。",
+      "把节点、边、事实有效期写入图存储。",
+      "检索时结合关键词、向量、图遍历和时间过滤。",
+    ],
+    goodFor: [
+      "关系密集、时间变化明显的知识场景。",
+      "需要解释“为什么召回这条记忆”的系统。",
+      "客户关系、项目事件、组织知识网络。",
+    ],
+    watchOut: [
+      "抽取和实体消歧比普通向量检索更难。",
+      "图谱维护成本高，脏边和重复节点会影响很大。",
+      "不适合所有内容都强行图谱化。",
+    ],
+  },
+  {
+    key: "checkpoint-store-memory",
+    title: "Checkpoint / Store Memory",
+    aliases: ["Checkpoint / Store", "Checkpoint / Store Memory", "Checkpoint Memory", "Store Memory"],
+    oneLiner: "checkpoint 负责恢复当前线程状态，store 负责跨线程保存可复用信息。",
+    explanation:
+      "这类路线更像 agent 的状态底座。checkpoint 让一次多步执行可以从中间继续，store 则让用户偏好、项目资料或语义记忆跨会话存在。它不一定自己做抽取，但给 memory 提供稳定存取接口。",
+    howItWorks: [
+      "每个执行线程按步骤保存状态快照。",
+      "跨线程信息写入 key-value 或语义 store。",
+      "下一轮执行时先恢复状态，再按需要读取 store。",
+    ],
+    goodFor: [
+      "长流程 agent、图式 workflow、可恢复任务。",
+      "需要区分 thread state 和 user memory 的框架。",
+      "多 agent 或多节点执行系统。",
+    ],
+    watchOut: [
+      "checkpoint 不是自动长期记忆，它主要解决状态恢复。",
+      "store 只是底座，写入什么仍然要由上层策略决定。",
+      "状态版本和 schema 变化需要治理。",
+    ],
+  },
+  {
+    key: "session-compaction",
+    title: "Session Compaction",
+    aliases: ["Session Compaction", "Context Compaction", "Conversation Compaction"],
+    oneLiner: "当上下文快满时，把旧会话压成结构化摘要，让 coding agent 继续跑。",
+    explanation:
+      "coding agent 经常产生大量工具调用、日志和代码 diff。session compaction 的目标不是构建用户画像，而是把当前任务的关键历史压缩下来，避免上下文爆掉后任务断线。",
+    howItWorks: [
+      "持续记录消息、工具输出和执行事件。",
+      "上下文接近上限时触发压缩。",
+      "用摘要替换较早历史，同时保留最近关键事件。",
+    ],
+    goodFor: [
+      "coding agent、终端 agent、长工具链任务。",
+      "需要中途继续执行而不是重新解释的会话。",
+      "上下文成本和延迟敏感的开发工具。",
+    ],
+    watchOut: [
+      "压缩摘要如果漏掉约束，后续修复方向会偏。",
+      "它主要服务当前会话连续性，不等于通用长期记忆。",
+      "工具日志和关键状态必须分清楚。",
+    ],
+  },
+  {
+    key: "framework-memory-interface",
+    title: "Framework Memory Interface",
+    aliases: ["Framework Memory Interface", "Memory Interface", "Pluggable Memory Interface"],
+    oneLiner: "框架定义 memory 怎么接入，把具体存储和策略留给插件或实现。",
+    explanation:
+      "这类路线常见于 agent framework。它不一定自己规定你必须用向量库或图谱，而是定义一套接口：memory 如何更新上下文、如何查询、如何清空、如何序列化。好处是灵活，代价是很多关键策略要使用者自己补。",
+    howItWorks: [
+      "定义抽象 Memory 类或协议。",
+      "不同实现接入列表、Chroma、Redis、Mem0 等后端。",
+      "agent 在每轮推理前调用 memory，把结果注入 model context。",
+    ],
+    goodFor: [
+      "通用 agent 框架和多后端生态。",
+      "团队希望先统一接口，再替换具体 memory 后端。",
+      "实验不同 memory 策略的开发阶段。",
+    ],
+    watchOut: [
+      "接口灵活不等于方案完整。",
+      "如果没有默认治理策略，容易把脏数据原样接进 prompt。",
+      "使用者需要自己评估写入、检索和预算分配。",
+    ],
+  },
 ];
 
 const mechanismAliasMap = new Map<string, MechanismDetail>();
@@ -792,9 +943,9 @@ export function getMechanismDetail(label: string) {
 }
 
 export const heroStats = [
-  { label: "比较维度", value: "6+2", note: "6 个设计维度，外加 2 个总结章节" },
+  { label: "比较维度", value: "6+2+1", note: "6 个设计维度，2 个总结章节，1 个开源实现页" },
   { label: "基础骨架", value: "3", note: "Short-term / Long-term / Working Memory" },
-  { label: "详情页面", value: "8", note: "6 个维度页，加 2 个总结页" },
+  { label: "详情页面", value: "9", note: "机制、总结和开源源码路线都单独成页" },
 ];
 
 export const dimensions: Dimension[] = [
@@ -2115,6 +2266,324 @@ export const dimensions: Dimension[] = [
       "只看别人用了什么组件，不看那个组件为什么适合那个 agent",
       "没有主类型判断，结果所有层都做了一点，但没有一层真正好用",
       "还没把当前回合做稳，就急着上很重的长期记忆，最后越改越乱",
+    ],
+  },
+  {
+    id: "open-source-projects",
+    navLabel: "开源实现",
+    eyebrow: "9. Open-source Implementations",
+    title: "开源 Agent Memory 项目实现路线对比",
+    accent: "cyan",
+    thesis: "看源码会发现，开源项目里的 memory 并不是同一种东西：有的是真正的长期记忆服务，有的是框架层 memory 接口，有的是 graph memory，有的只是为 coding agent 做 session compaction。把它们放在一起比较，重点不是谁名字更像 memory，而是谁解决了哪一段链路。",
+    definition: "这一章把 mem0、Letta、CrewAI、LangGraph、LlamaIndex、AutoGen、Agno、Graphiti、opencode、Pi agent 放到同一张实现地图里看。比较维度不是产品宣传，而是源码里真实出现的写入路径、读取路径、存储后端、上下文注入方式和污染风险。这样你能更快判断：某个项目是在做长期事实记忆、会话状态恢复、检索增强，还是只是把上下文压缩得更能续命。",
+    summaryLabel: "看真实开源项目如何实现 memory 写入、读取和存储",
+    plainExplanation:
+      "如果前面几章是在讲 memory 的零件，这一章就是拆几台真实机器。你会看到：mem0 更像专门的记忆服务，Letta 更像分层记忆系统，Graphiti 更像带时间的关系网，LangGraph 更像状态恢复和 store 底座，opencode 和 Pi 更像把长会话压缩好让 coding agent 不断线。它们都和 memory 有关，但解决的问题不是一模一样。",
+    whenToUse: [
+      "当你想从源码角度理解 agent memory 的真实工程路线时，先看这一章。",
+      "当你准备选一个开源项目参考实现，而不是只看概念分类时，这一章能帮你快速排除不匹配路线。",
+      "当团队把向量库、graph、checkpoint、session compaction 都叫 memory 时，可以用这一章拆清楚它们各自负责什么。",
+      "当你想知道 coding agent 里的 memory 和长期个性化 memory 为什么不是一回事时，这一章尤其有用。",
+    ],
+    mainstreamMechanisms: [
+      "Dedicated Memory Service",
+      "Layered Agent Memory",
+      "Temporal Knowledge Graph Memory",
+      "Checkpoint / Store Memory",
+      "Session Compaction",
+      "Framework Memory Interface",
+    ],
+    pipeline: [
+      { title: "Identify Route", description: "先判断项目到底在做长期事实记忆、框架接口、图谱记忆、状态恢复，还是会话压缩。" },
+      { title: "Trace Write Path", description: "沿着 add / remember / update_context / checkpoint / compaction 入口看信息什么时候被写入。" },
+      { title: "Trace Read Path", description: "看查询时是语义搜索、图遍历、状态恢复、摘要注入，还是简单列表拼接。" },
+      { title: "Check Storage", description: "确认底层是 vector store、SQL、graph DB、KV store、JSONL，还是多种后端混合。" },
+      { title: "Map To Agent Type", description: "最后把实现路线放回 agent 类型：陪伴、检索、workflow、coding、平台型分别需要的 memory 不一样。" },
+    ],
+    designQuestions: [
+      "这个项目是真正做长期 memory，还是只提供上下文管理、状态恢复或 memory 接口？",
+      "它的写入入口在哪里：每轮自动写、显式 remember、LLM 决策写，还是上下文超限后压缩？",
+      "读取时返回的是事实、消息、图关系、状态快照，还是压缩摘要？",
+      "底层存储有没有支持 scope、metadata、时间、来源和删除？",
+      "如果把它接到你的 agent 里，最可能先帮你解决的是召回、连续性、执行稳定，还是个性化？",
+    ],
+    mechanisms: [
+      {
+        title: "Dedicated Memory Service",
+        tag: "Service layer",
+        summary: "以 mem0 为代表，把记忆抽取、向量化、检索、更新、历史记录做成独立服务或 SDK。agent 调用它来 add/search，而不是自己维护所有细节。",
+        strengths: "边界清楚，容易跨应用复用，也方便单独优化写入、检索和去重。",
+        risks: "如果写入策略或作用域治理没做好，错误事实会被服务化地稳定传播。",
+        fit: "用户偏好、长期事实、跨会话个性化、需要独立 memory layer 的产品。",
+      },
+      {
+        title: "Layered Agent Memory",
+        tag: "Layered system",
+        summary: "以 Letta 为代表，把 core memory、archival memory、recall/messages、context window 管理分开，每一层负责不同距离和不同优先级的信息。",
+        strengths: "比单一向量库更接近真实 agent：常用内容直接可见，大量历史按需召回，上下文超限时还能摘要。",
+        risks: "层多之后 source of truth 和同步关系会变复杂，同一信息可能在多层重复或冲突。",
+        fit: "长期陪伴、项目协作、复杂平台型 agent。",
+      },
+      {
+        title: "Temporal Knowledge Graph Memory",
+        tag: "Graph route",
+        summary: "以 Graphiti 为代表，把事件抽成实体、关系和时间边，再用图搜索、语义搜索和重排一起找回相关记忆。",
+        strengths: "适合关系密集、时间变化明显的记忆，可以表达谁和谁有关、关系什么时候变化。",
+        risks: "抽取、消歧、去重和图维护成本都更高，不适合所有信息都硬塞成图。",
+        fit: "客户关系、项目事件流、组织知识、需要时间关系的长期记忆。",
+      },
+      {
+        title: "Checkpoint / Store Memory",
+        tag: "State base",
+        summary: "以 LangGraph 为代表，把线程执行状态放进 checkpoint，把跨线程信息放进 store。它更像 agent workflow 的状态底座。",
+        strengths: "很适合长流程和可恢复任务，能把“当前做到哪”与“跨会话可复用信息”分开。",
+        risks: "checkpoint 本身不是自动长期记忆；store 写什么、怎么治理，仍要上层策略决定。",
+        fit: "workflow agent、多节点图执行、任务恢复、需要跨线程 store 的系统。",
+      },
+      {
+        title: "Session Compaction",
+        tag: "Coding agent",
+        summary: "以 opencode 和 Pi agent 为代表，重点是记录会话消息和工具输出，在上下文快满时把旧历史压成结构化摘要。",
+        strengths: "能让 coding agent 在长任务里不断线，减少上下文爆掉后的失忆感。",
+        risks: "它主要服务当前任务连续性，不等于长期用户画像或可检索经验库。摘要漏掉约束时会带偏后续执行。",
+        fit: "coding agent、终端 agent、长工具调用链、需要上下文续航的任务。",
+      },
+      {
+        title: "Framework Memory Interface",
+        tag: "Pluggable API",
+        summary: "以 AutoGen、LlamaIndex、Agno 等框架路线为代表，先定义 memory 接口和上下文注入方式，再接不同后端或策略。",
+        strengths: "灵活、可替换、适合实验不同 memory 后端，也方便和已有 agent framework 集成。",
+        risks: "接口不等于完整方案，写入门控、污染治理、排序预算通常还要自己设计。",
+        fit: "框架用户、研究原型、多后端 memory 实验。",
+      },
+    ],
+    projectComparisons: [
+      {
+        project: "mem0",
+        category: "Memory service",
+        corePaths: ["mem0/memory/main.py", "mem0/memory/storage.py", "mem0/vector_stores/*"],
+        route: "专门的长期语义记忆服务，围绕 add/search/history 做事实抽取、向量写入和召回。",
+        writePath: "输入消息后由 LLM 抽取候选事实，embedding 后写入 vector store，并用 SQLite/历史记录追踪变化。",
+        readPath: "查询时做 semantic search，结合 BM25、实体信号或 rerank，把相关事实返回给 agent。",
+        storage: "Vector stores + history DB，可接 Qdrant、Chroma、Pinecone、pgvector 等。",
+        bestFit: "长期用户事实、偏好记忆、跨会话个性化。",
+        risk: "容易把临时话语写成长期事实，scope 和冲突处理必须认真做。",
+      },
+      {
+        project: "Letta",
+        category: "Layered memory",
+        corePaths: ["letta/schemas/memory.py", "letta/schemas/block.py", "letta/services/passage_manager.py", "letta/agents/letta_agent.py"],
+        route: "分层 agent memory：core blocks 常驻上下文，archival passages 外部检索，message/recall 负责历史回看。",
+        writePath: "通过 block、passage、agent service 管理核心记忆和档案记忆，上下文超限时配合摘要与窗口计算。",
+        readPath: "核心 block 直接进 prompt，archival memory 按需检索，消息历史按窗口和摘要策略进入上下文。",
+        storage: "SQL / passage store / archival memory，按层分工。",
+        bestFit: "长期对话、项目协作、需要清晰 memory 层次的 agent。",
+        risk: "层间同步和冲突较难，核心记忆写错会持续影响 agent。",
+      },
+      {
+        project: "CrewAI",
+        category: "Unified memory",
+        corePaths: ["lib/crewai/src/crewai/memory/unified_memory.py", "encoding_flow.py", "recall_flow.py", "storage/lancedb_storage.py"],
+        route: "Unified Memory 路线：用 encoding flow 管写入，用 recall flow 管浅召回/深召回。当前本地 sparse checkout 需补齐源码目录。",
+        writePath: "remember/remember_many 进入编码流程：embedding、批量去重、相似记忆查找、LLM 规划 insert/update/delete/noop。",
+        readPath: "recall 可走 shallow/deep：分析查询、生成子查询、选择 scope、并行搜索，再按相关性、时间、重要性排序。",
+        storage: "默认 LanceDB，另有 Qdrant Edge 等后端路线。",
+        bestFit: "crew/agent 协作场景中的用户事实、任务上下文和可复用记忆。",
+        risk: "LLM 驱动写入很灵活，但也更依赖提示、评估和去重质量。",
+      },
+      {
+        project: "LangGraph",
+        category: "Checkpoint/store",
+        corePaths: ["libs/checkpoint/langgraph/checkpoint/memory/__init__.py", "libs/checkpoint/langgraph/store/memory/__init__.py", "libs/checkpoint/langgraph/store/base/__init__.py"],
+        route: "把 graph 执行状态和跨线程 store 分开：checkpoint 管线程恢复，store 管长期或语义信息。",
+        writePath: "节点执行过程中写 checkpoint；跨线程信息通过 store put/search 写入命名空间。",
+        readPath: "恢复线程时读取 checkpoint；需要用户/项目记忆时查 store，可结合 embedding 搜索。",
+        storage: "In-memory、Postgres、Redis 等 checkpoint/store 后端。",
+        bestFit: "可恢复 workflow、多步骤任务、需要 thread state 的 agent。",
+        risk: "它提供底座，不自动决定什么值得长期写入。",
+      },
+      {
+        project: "LlamaIndex",
+        category: "Composable memory",
+        corePaths: ["llama_index/core/memory/memory.py", "memory_blocks/vector.py", "chat_memory_buffer.py", "chat_summary_memory_buffer.py"],
+        route: "短期 chat store + memory blocks 的组合路线，支持 buffer、summary、vector block 等多种记忆块。",
+        writePath: "消息先进入 chat store，超出预算后可 flush 到 memory blocks，或由 vector/fact/static block 承接长期信息。",
+        readPath: "当前消息、短期历史和 memory block 检索结果一起组装进上下文。",
+        storage: "SQL/simple chat store + vector memory block + 可组合存储。",
+        bestFit: "RAG agent、文档助手、需要快速拼装不同 memory block 的应用。",
+        risk: "组件很多，真正效果取决于 block 选择、flush 策略和上下文预算。",
+      },
+      {
+        project: "AutoGen",
+        category: "Memory interface",
+        corePaths: ["autogen_core/memory/_base_memory.py", "_list_memory.py", "autogen_ext/memory/*"],
+        route: "定义可插拔 Memory 接口，具体实现可以是列表、Chroma、Redis、Mem0 或实验性任务中心记忆。",
+        writePath: "具体 Memory 实现负责 add/clear/close 等操作，框架层不强行规定统一写入策略。",
+        readPath: "agent 调用 update_context，把 memory 检索结果注入 model context。",
+        storage: "List memory、ChromaDB、Redis、Mem0 adapter 等。",
+        bestFit: "多 agent 框架、需要替换 memory 后端的实验系统。",
+        risk: "接口灵活但默认治理弱，容易把 memory 责任留给使用者。",
+      },
+      {
+        project: "Agno",
+        category: "User memory",
+        corePaths: ["libs/agno/agno/memory/manager.py", "memory/strategies/summarize.py", "memory/strategies/base.py"],
+        route: "偏用户事实/profile 的 memory manager，提供 add/update/delete/clear 等工具化写入能力。",
+        writePath: "LLM 可调用 memory 工具新增、更新、删除用户记忆，也可用 summarize strategy 生成记忆。",
+        readPath: "支持 last_n、first_n、agentic 等读取方式，把用户相关记忆带回当前会话。",
+        storage: "依赖框架配置的 memory DB / storage。",
+        bestFit: "个人助手、用户画像、轻量长期偏好管理。",
+        risk: "偏 profile 路线，复杂任务状态和图关系需要额外设计。",
+      },
+      {
+        project: "Graphiti",
+        category: "Temporal graph",
+        corePaths: ["graphiti_core/graphiti.py", "graphiti_core/nodes.py", "graphiti_core/edges.py", "graphiti_core/search/search.py"],
+        route: "时间知识图谱 memory：把 episode 抽成节点、边和时间事实，再做混合检索。",
+        writePath: "add_episode 抽取实体和关系，做 dedupe/resolution 后写入 graph。",
+        readPath: "搜索结合 BM25、vector、图遍历、cross-encoder rerank 等信号。",
+        storage: "Neo4j / FalkorDB / Kuzu / Neptune 等 graph 后端。",
+        bestFit: "关系密集、事件持续变化、需要时间感的长期记忆。",
+        risk: "实体消歧和脏关系治理难度高，维护成本比向量库更重。",
+      },
+      {
+        project: "opencode",
+        category: "Session compaction",
+        corePaths: ["packages/core/src/session/compaction.ts", "session/history.ts", "session/store.ts", "session/sql.ts"],
+        route: "coding agent 会话记忆：用 SQLite/session history 保存消息，靠 compaction 处理上下文溢出。",
+        writePath: "会话消息、工具输出和状态写入 session store / SQL。",
+        readPath: "构建 LLM 输入时读取会话历史；上下文过长时使用结构化 compaction summary。",
+        storage: "SQLite session/message/event tables。",
+        bestFit: "长代码任务、终端会话、工具调用密集的 coding agent。",
+        risk: "主要解决当前任务续航，不是跨项目长期知识库。",
+      },
+      {
+        project: "Pi agent",
+        category: "Session tree",
+        corePaths: ["packages/agent/src/harness/compaction/compaction.ts", "harness/session/session.ts", "harness/session/jsonl-repo.ts"],
+        route: "coding-agent session tree + compaction：会话条目可形成树，压缩后保留摘要和继续点。",
+        writePath: "session entry 写入 repo/storage，compaction 生成 summary entry 和 firstKeptEntryId。",
+        readPath: "上下文构建时用摘要替换较早分支历史，同时保留最近条目。",
+        storage: "JSONL / memory storage / session repo。",
+        bestFit: "可分支、可压缩的 coding agent 会话。",
+        risk: "摘要质量直接决定恢复质量，长期经验沉淀需要另做。",
+      },
+    ],
+    examples: [
+      {
+        title: "mem0：最像“独立记忆服务”的路线",
+        scenario: "mem0 的核心不是把聊天记录简单拼进 prompt，而是把 add/search/history 做成一套服务化流程。写入时抽取事实并做向量化，读取时再按语义和元数据找回。",
+        takeaway: "如果你要的是跨会话事实和偏好记忆，mem0 这类路线比单纯 session history 更贴近目标。",
+      },
+      {
+        title: "Letta：更像一套分层 memory architecture",
+        scenario: "Letta 把 core memory、archival passages、message recall 和 context window 计算分开。它不是只问“用不用向量库”，而是问哪些内容应该常驻，哪些内容应该按需查。",
+        takeaway: "长期 agent 常常需要分层，而不是把所有东西塞进同一个检索桶。",
+      },
+      {
+        title: "LangGraph：memory 很多时候先是状态问题",
+        scenario: "LangGraph 的 checkpoint/store 让执行线程可以恢复，让跨线程信息可以保存。它并不自动替你判断什么是好记忆，但给 workflow agent 一个稳定底座。",
+        takeaway: "对任务型 agent 来说，先别急着上复杂长期记忆，状态恢复可能更先救命。",
+      },
+      {
+        title: "opencode / Pi：coding agent 的 memory 常常是 compaction",
+        scenario: "coding agent 最大压力往往来自上下文爆掉：命令、错误、文件 diff、工具输出都很长。所以它们先解决的是如何压缩旧历史，让当前任务不断线。",
+        takeaway: "session compaction 是 memory 机制，但不要把它误读成完整长期记忆系统。",
+      },
+    ],
+    misconceptions: [
+      "误解一：开源项目只要有 memory 文件夹，就说明它实现了完整长期记忆系统。",
+      "误解二：coding agent 的 session compaction 等同于用户长期记忆。",
+      "误解三：有 vector store 就代表 memory 机制已经完整。",
+      "误解四：framework 提供 Memory 接口，就代表写入、去重、污染治理都已经替你做好。",
+      "误解五：graph memory 一定比 vector memory 更高级，实际要看关系和时间是不是你的核心问题。",
+    ],
+    deepDive: [
+      {
+        title: "先把开源项目分成 4 类，而不是混在一起比",
+        body: "这些项目都和 memory 有关，但它们站的位置不同。mem0 更偏 memory service，Letta 更偏完整 agent memory architecture，LangGraph 和 AutoGen 更偏 framework 底座，opencode 和 Pi 更偏 coding agent 的会话续航。",
+        bullets: [
+          "长期 memory 项目关心事实、偏好、经验能不能跨会话存在。",
+          "framework 项目关心 memory 如何接入 agent 生命周期。",
+          "coding agent 项目关心上下文爆掉后任务能不能继续。",
+          "图谱项目关心实体、关系、时间变化能不能被表达和检索。",
+        ],
+      },
+      {
+        title: "写入路径最能暴露一个项目的 memory 观",
+        body: "真正比较源码时，不要只看有没有 search，也要看信息什么时候被写进去。mem0/CrewAI 会做抽取和写入决策；LangGraph 的 checkpoint 是执行过程自动状态保存；opencode/Pi 是会话事件和压缩摘要；AutoGen 则把写入交给具体 Memory 实现。",
+        bullets: [
+          "显式 remember/add 更适合可控长期记忆。",
+          "自动 checkpoint 更适合任务恢复，但不是事实抽取。",
+          "上下文超限触发 compaction 更适合长会话续航。",
+          "LLM 决策写入灵活，但必须配去重、冲突和可回滚机制。",
+        ],
+      },
+      {
+        title: "读取路径决定记忆最终怎么影响模型",
+        body: "记忆不是存进去就结束了，关键是怎么回到 prompt。向量服务通常返回 top-k 事实；分层系统会把核心记忆常驻、档案记忆按需检索；checkpoint 会恢复状态；compaction 会用摘要替代旧历史。",
+        bullets: [
+          "如果读取只按相似度排序，可能会漏掉时间、来源和作用域。",
+          "如果核心记忆常驻，就要格外避免把错误内容写进去。",
+          "如果靠摘要恢复旧历史，摘要的结构化程度会影响后续执行稳定性。",
+          "如果只是 store API，仍要自己决定召回多少、怎么排、怎么塞进 token budget。",
+        ],
+      },
+      {
+        title: "存储后端不是答案，只是答案的一部分",
+        body: "同样叫长期记忆，底层可能是向量库、SQL、graph DB、KV store、JSONL，也可能是混合结构。真正要比较的是存储后端和记忆对象是否匹配：事实相似度适合向量，关系变化适合图，执行恢复适合 checkpoint，结构化 profile 适合关系或文档存储。",
+        bullets: [
+          "Vector store 适合语义相似召回，但不擅长表达强关系和强约束。",
+          "Graph store 适合关系和时间，但抽取与维护更重。",
+          "SQL/KV 适合状态、profile 和审计字段。",
+          "JSONL/session store 很适合开发工具历史，但不是通用 memory layer。",
+        ],
+      },
+      {
+        title: "污染治理在源码里通常比宣传里更重要",
+        body: "memory 一旦长期运行，真正麻烦的不是存不进去，而是存进去的东西会不会错、旧、重复、串范围。mem0、CrewAI、Graphiti 这类会处理相似记忆、去重或实体解析；但任何项目接入后都仍要按你的业务补 scope、删除、审计和冲突策略。",
+        bullets: [
+          "去重不是只看文本相同，还要看语义相似、实体相同和时间是否冲突。",
+          "scope isolation 对多用户、多项目 agent 是硬要求。",
+          "删除和更正能力比新增记忆更容易被低估。",
+          "记忆越自动，越需要观测、回滚和人工纠错入口。",
+        ],
+      },
+      {
+        title: "怎么选一个项目来参考",
+        body: "最实用的选型方法是先问：你要解决的是跨会话事实、长期关系、任务恢复、上下文续航，还是框架扩展？如果目标不同，最值得参考的项目也不同。",
+        bullets: [
+          "做个人偏好/事实记忆，优先看 mem0、Agno、CrewAI 的写入与召回。",
+          "做长期对话或平台 agent，优先看 Letta 的分层方式。",
+          "做关系和时间记忆，优先看 Graphiti。",
+          "做 workflow agent，优先看 LangGraph 的 checkpoint/store。",
+          "做 coding agent，优先看 opencode 和 Pi 的 session compaction。",
+          "做框架集成，优先看 AutoGen、LlamaIndex 的接口设计。",
+        ],
+      },
+    ],
+    architectureNotes: [
+      "比较开源实现时，先看项目所在层级：service、agent runtime、framework interface、workflow state，还是 coding session。",
+      "不要把 session history、checkpoint、vector memory 和 graph memory 混成一个词，它们解决的是不同故障。",
+      "源码里最值得追的是入口函数：add、remember、update_context、checkpoint、compact、search。",
+      "项目表里的 CrewAI 路径来自上游结构，当前本地 sparse checkout 还需要补齐源码目录后再做逐行核验。",
+      "真正落地时，通常会组合两到三类路线，例如 LangGraph 管状态，mem0 管长期事实，opencode 式 compaction 管长会话。",
+    ],
+    metrics: [
+      "写入准确率：留下来的事实是否真的值得长期保存",
+      "召回命中率：需要时能不能找到正确记忆",
+      "污染率：重复、过期、错误、跨 scope 记忆有多少",
+      "上下文效率：召回内容进入 prompt 后是否真的帮忙，而不是占 token",
+      "恢复能力：长流程中断后能不能接回正确状态",
+      "可维护性：出错后能否追踪来源、删除、更正和回滚",
+    ],
+    failureModes: [
+      "把 framework memory interface 当成现成 memory system，结果写入和治理全缺",
+      "把 coding agent 的 compaction 当成长期个性化记忆，最后跨会话体验仍然断裂",
+      "只看 star 数选项目，不看它解决的是事实记忆、状态恢复还是上下文续航",
+      "只接向量库，不做 metadata、scope、冲突和删除，短期看起来能用，长期变脏",
+      "盲目上 graph memory，但业务里的关系并不复杂，反而增加抽取和维护负担",
+      "没有验证写入路径，导致 agent 把临时指令、错误观察和工具噪声都当成长期记忆",
     ],
   },
 ];
