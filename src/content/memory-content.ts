@@ -23,6 +23,7 @@ export interface MechanismDetail {
 export interface ProjectComparison {
   project: string;
   category: string;
+  tier?: "primary" | "secondary";
   corePaths: string[];
   route: string;
   writePath: string;
@@ -943,6 +944,29 @@ export const mechanismDetails: MechanismDetail[] = [
       "接口灵活不等于方案完整。",
       "如果没有默认治理策略，容易把脏数据原样接进 prompt。",
       "使用者需要自己评估写入、检索和预算分配。",
+    ],
+  },
+  {
+    key: "local-first-memory-os",
+    title: "Local-first Memory OS",
+    aliases: ["Local-first Memory OS", "Memory OS", "Markdown-first Memory"],
+    oneLiner: "把 memory 做成本地优先的运行时：文件可读、索引可检索、系统可持续整理。",
+    explanation:
+      "这类路线不只提供一个向量库，而是把记忆写入、文件化沉淀、索引、检索、提示槽位和后台整理放在同一套本地运行时里。它适合强调可控、可审计、可迁移的 agent memory。",
+    howItWorks: [
+      "先把对话、事实、经验或技能抽取成结构化 memory cell。",
+      "用 Markdown 或可读文件作为主要沉淀形态，同时用 SQLite、LanceDB 等索引层支撑检索。",
+      "通过 cascade、prompt slots 或后台任务持续组织、更新和召回记忆。",
+    ],
+    goodFor: [
+      "本地优先、隐私敏感或小团队协作场景。",
+      "希望 memory 既能被 agent 用，也能被人审阅和版本管理。",
+      "需要同时管理用户画像、事实、经验、技能和任务线索的系统。",
+    ],
+    watchOut: [
+      "文件、索引和运行时状态必须保持一致。",
+      "本地优先降低云依赖，但会增加安装、同步和迁移复杂度。",
+      "如果抽取策略过宽，Markdown-first 也会沉淀大量噪声。",
     ],
   },
 ];
@@ -2295,7 +2319,7 @@ export const dimensions: Dimension[] = [
     title: "开源 Agent Memory 实现项目对比",
     accent: "cyan",
     thesis: "筛选标准限定为已经实现 agent memory 能力的开源项目：至少具备记忆写入、持久化存储、召回检索与上下文注入中的关键链路；仅具备会话压缩、任务状态保存或通用 agent 编排能力的项目不纳入主列表。",
-    definition: "核心样本包括 memory-first 项目与明确提供 agent memory 模块的框架实现。mem0、Letta、Cognee、MemOS、LangMem、A-MEM 和 Graphiti 属于主线样本；CrewAI、AutoGen、LlamaIndex、Agno 属于框架内 memory 实现样本；LangGraph 仅作为 long-term store 与 checkpoint 边界参考。opencode、Pi agent、Codex 类工具、Harness-1、AutoGPT、CAMEL 不作为 agent memory 项目主例，原因是其主要能力分别落在 coding session、search harness 或 agent platform，而非完整 memory 系统。",
+    definition: "核心样本包括 memory-first 项目与明确提供 agent memory 模块的框架实现。mem0、Letta、Cognee、MemOS、EverOS、LangMem、A-MEM 和 Graphiti 属于主线样本；CrewAI、AutoGen、LlamaIndex、Agno 属于框架内 memory 实现样本；LangGraph 仅作为 long-term store 与 checkpoint 边界参考。opencode、Pi agent、Codex 类工具、Harness-1、AutoGPT、CAMEL 不作为 agent memory 项目主例，原因是其主要能力分别落在 coding session、search harness 或 agent platform，而非完整 memory 系统。",
     summaryLabel: "聚焦真正实现 agent memory 的开源项目与实现路线",
     plainExplanation:
       "开源 agent memory 项目的核心差异不在项目名，而在记忆对象和系统链路：有的管理长期事实与偏好，有的维护分层记忆运行时，有的构建时间知识图谱，有的提供框架级 memory 接口。coding session、checkpoint、search evidence board 等机制可作为边界案例，但不等同于完整 agent memory 项目。",
@@ -2308,6 +2332,7 @@ export const dimensions: Dimension[] = [
     mainstreamMechanisms: [
       "Dedicated Memory Service",
       "Layered Agent Memory",
+      "Local-first Memory OS",
       "Temporal Knowledge Graph Memory",
       "Checkpoint / Store Memory",
       "Framework Memory Interface",
@@ -2352,6 +2377,14 @@ export const dimensions: Dimension[] = [
         fit: "客户关系、项目事件流、组织知识、需要时间关系的长期记忆。",
       },
       {
+        title: "Local-first Memory OS",
+        tag: "Local runtime",
+        summary: "以 EverOS 为代表，把 Markdown-first 记忆、SQLite/LanceDB 索引、memorize/search/cascade/prompt slots 放在同一套本地优先运行时里。",
+        strengths: "可读、可审计、可迁移，适合把 agent 记忆沉淀成既能被人查看、也能被机器检索的长期资产。",
+        risks: "文件、索引和后台整理流程需要保持一致；本地部署降低云依赖，但增加同步和迁移复杂度。",
+        fit: "本地优先助手、小团队知识沉淀、需要人机共同维护 memory 的 agent。",
+      },
+      {
         title: "Framework Memory Interface",
         tag: "Pluggable API",
         summary: "以 AutoGen、LlamaIndex、Agno 等框架路线为代表，先定义 memory 接口和上下文注入方式，再接不同后端或策略。",
@@ -2364,11 +2397,20 @@ export const dimensions: Dimension[] = [
       {
         title: "长期记忆服务 / Memory Service",
         label: "Long-term service",
-        projects: ["mem0", "Cognee", "MemOS"],
+        projects: ["mem0", "Cognee", "MemOS", "EverOS"],
         whatItSolves: "让 agent 跨会话记住事实、偏好、知识和经验，不必每次从零开始。",
         howToRead: "看 add/search/update/delete 是否形成完整链路，以及是否有作用域、来源和冲突治理。",
         typicalStack: "LLM fact extraction + embedding + vector / graph / SQL + metadata filtering。",
         caveat: "有长期存储不等于好记忆；写入门控和污染治理才决定长期效果。",
+      },
+      {
+        title: "本地优先 Memory OS / Local-first Runtime",
+        label: "Local-first OS",
+        projects: ["EverOS"],
+        whatItSolves: "把 memory 做成本地可读、可审计、可索引的长期运行时，而不是只提供远端 API 或单一向量库。",
+        howToRead: "重点看 memorize/search/cascade/prompt slots 如何衔接，以及 Markdown、SQLite、LanceDB 三层如何保持一致。",
+        typicalStack: "Markdown-first memory cells + SQLite metadata/state + LanceDB hybrid retrieval + cascade worker。",
+        caveat: "本地优先路线的价值在可控和可迁移；代价是需要管理索引同步、文件变更和运行时维护。",
       },
       {
         title: "分层 Agent Memory Runtime",
@@ -2416,6 +2458,13 @@ export const dimensions: Dimension[] = [
         easyMisread: "不是所有聊天记录都该写进去。临时情绪、一次性指令、错误工具输出如果乱写，就会变成记忆污染。",
       },
       {
+        title: "本地优先 Memory OS：像可搜索、可整理、可搬家的个人资料库",
+        analogy: "不是把记忆锁在某个黑盒数据库里，而是像把资料放进有目录、有索引、有管理员的本地档案柜。",
+        plainIdea: "让 agent 记忆既能被机器检索，也能被人直接查看、备份和迁移。",
+        howItWorks: "记忆先被抽取成事实、用户画像、经验或技能，再落到 Markdown/文件结构里，同时用 SQLite 和 LanceDB 建索引；后台 cascade 负责持续整理。",
+        easyMisread: "本地优先不代表自动可靠。文件、索引和抽取策略如果不同步，记忆仍然会乱。",
+      },
+      {
         title: "分层记忆：像桌面、抽屉和档案馆分工",
         analogy: "正在用的纸放桌面，常用信息放抽屉，旧资料放档案馆。不是所有东西都摊在眼前。",
         plainIdea: "把记忆按使用频率和重要程度分层：核心记忆常驻，历史资料按需检索，旧对话必要时摘要。",
@@ -2448,6 +2497,7 @@ export const dimensions: Dimension[] = [
       {
         project: "mem0",
         category: "Memory service",
+        tier: "primary",
         corePaths: ["mem0/memory/main.py", "mem0/memory/storage.py", "mem0/vector_stores/*"],
         route: "专门的长期语义记忆服务，围绕 add/search/history 做事实抽取、向量写入和召回。",
         writePath: "输入消息后由 LLM 抽取候选事实，embedding 后写入 vector store，并用 SQLite/历史记录追踪变化。",
@@ -2459,6 +2509,7 @@ export const dimensions: Dimension[] = [
       {
         project: "Letta",
         category: "Layered memory",
+        tier: "primary",
         corePaths: ["letta/schemas/memory.py", "letta/schemas/block.py", "letta/services/passage_manager.py", "letta/agents/letta_agent.py"],
         route: "分层 agent memory：core blocks 常驻上下文，archival passages 外部检索，message/recall 负责历史回看。",
         writePath: "通过 block、passage、agent service 管理核心记忆和档案记忆，上下文超限时配合摘要与窗口计算。",
@@ -2470,6 +2521,7 @@ export const dimensions: Dimension[] = [
       {
         project: "CrewAI",
         category: "Unified memory",
+        tier: "secondary",
         corePaths: ["lib/crewai/src/crewai/memory/unified_memory.py", "encoding_flow.py", "recall_flow.py", "storage/lancedb_storage.py"],
         route: "Unified Memory 路线：用 encoding flow 管写入，用 recall flow 管浅召回/深召回。当前本地 sparse checkout 需补齐源码目录。",
         writePath: "remember/remember_many 进入编码流程：embedding、批量去重、相似记忆查找、LLM 规划 insert/update/delete/noop。",
@@ -2481,6 +2533,7 @@ export const dimensions: Dimension[] = [
       {
         project: "LlamaIndex",
         category: "Composable memory",
+        tier: "secondary",
         corePaths: ["llama_index/core/memory/memory.py", "memory_blocks/vector.py", "chat_memory_buffer.py", "chat_summary_memory_buffer.py"],
         route: "短期 chat store + memory blocks 的组合路线，支持 buffer、summary、vector block 等多种记忆块。",
         writePath: "消息先进入 chat store，超出预算后可 flush 到 memory blocks，或由 vector/fact/static block 承接长期信息。",
@@ -2492,6 +2545,7 @@ export const dimensions: Dimension[] = [
       {
         project: "AutoGen",
         category: "Memory interface",
+        tier: "secondary",
         corePaths: ["autogen_core/memory/_base_memory.py", "_list_memory.py", "autogen_ext/memory/*"],
         route: "定义可插拔 Memory 接口，具体实现可以是列表、Chroma、Redis、Mem0 或实验性任务中心记忆。",
         writePath: "具体 Memory 实现负责 add/clear/close 等操作，框架层不强行规定统一写入策略。",
@@ -2503,6 +2557,7 @@ export const dimensions: Dimension[] = [
       {
         project: "Agno",
         category: "User memory",
+        tier: "secondary",
         corePaths: ["libs/agno/agno/memory/manager.py", "memory/strategies/summarize.py", "memory/strategies/base.py"],
         route: "偏用户事实/profile 的 memory manager，提供 add/update/delete/clear 等工具化写入能力。",
         writePath: "LLM 可调用 memory 工具新增、更新、删除用户记忆，也可用 summarize strategy 生成记忆。",
@@ -2514,6 +2569,7 @@ export const dimensions: Dimension[] = [
       {
         project: "Graphiti",
         category: "Temporal graph",
+        tier: "primary",
         corePaths: ["graphiti_core/graphiti.py", "graphiti_core/nodes.py", "graphiti_core/edges.py", "graphiti_core/search/search.py"],
         route: "时间知识图谱 memory：把 episode 抽成节点、边和时间事实，再做混合检索。",
         writePath: "add_episode 抽取实体和关系，做 dedupe/resolution 后写入 graph。",
@@ -2521,6 +2577,18 @@ export const dimensions: Dimension[] = [
         storage: "Neo4j / FalkorDB / Kuzu / Neptune 等 graph 后端。",
         bestFit: "关系密集、事件持续变化、需要时间感的长期记忆。",
         risk: "实体消歧和脏关系治理难度高，维护成本比向量库更重。",
+      },
+      {
+        project: "EverOS",
+        category: "Local-first memory OS",
+        tier: "primary",
+        corePaths: ["src/everos/service/memorize.py", "src/everos/service/search.py", "src/everos/memory/cascade/*", "src/everos/infra/persistence/{sqlite,lancedb}/*"],
+        route: "本地优先、Markdown-first 的 agent memory runtime，用文件化记忆承接人类可读性，用 SQLite/LanceDB 承接状态与检索。",
+        writePath: "memorize 入口把会话或事件分段后进入抽取管线，生成 user profile、atomic fact、episode、agent skill、foresight 等 memory cell。",
+        readPath: "search 入口结合 recall、hierarchy、filters、shaper 与 agentic search，把相关记忆整理成可进入上下文的结果。",
+        storage: "Markdown-first memory + SQLite metadata/state + LanceDB vector/FTS tables。",
+        bestFit: "本地优先助手、小团队知识沉淀、需要人机共同审计和维护的长期记忆。",
+        risk: "文件、索引和后台 cascade 需要保持一致；部署更可控，但维护面比单一 memory API 更宽。",
       },
     ],
     examples: [
@@ -2544,6 +2612,11 @@ export const dimensions: Dimension[] = [
         scenario: "LangMem 提供长期记忆抽取、管理工具和 LangGraph store 集成；A-MEM 则研究 agentic memory 如何动态组织和利用历史经验。它们比普通 agent framework 更直接围绕 memory 问题展开。",
         takeaway: "memory 工具库和研究型 memory 系统可以纳入主列表，但应与通用 agent 框架区分。",
       },
+      {
+        title: "EverOS：本地优先的 Markdown-first memory runtime",
+        scenario: "EverOS 把 memorize、search、cascade、prompt slots 和本地持久化放在同一套运行时里。它不是只把向量检索包装成 API，而是让记忆以 Markdown-first 形态沉淀，同时用 SQLite 与 LanceDB 支撑状态、索引和召回。",
+        takeaway: "当记忆需要被人审阅、迁移、备份和长期维护时，本地优先 Memory OS 是区别于纯云端 memory service 的一条重要路线。",
+      },
     ],
     misconceptions: [
       "误解一：开源项目只要有 memory 文件夹，就说明它实现了完整长期记忆系统。",
@@ -2559,6 +2632,7 @@ export const dimensions: Dimension[] = [
         body: "符合主列表条件的项目可以合并为长期记忆服务、分层 runtime、framework memory interface、graph memory、experience / skill evolution 等路线。该分组排除了仅提供 session compaction、checkpoint、search evidence state 或通用 agent 编排的项目。",
         bullets: [
           "长期 memory service 关心事实、偏好、经验能不能跨会话存在。",
+          "本地优先 memory OS 关心记忆能不能可读、可审计、可迁移，并持续保持索引一致。",
           "分层 runtime 关心哪些记忆常驻、哪些检索、哪些摘要。",
           "framework interface 关心 memory 如何接入 agent 生命周期。",
           "graph memory 关心实体、关系、时间变化能不能被表达和检索。",
@@ -2620,6 +2694,7 @@ export const dimensions: Dimension[] = [
         body: "最实用的选型方法是先问：你要解决的是跨会话事实、长期关系、任务恢复、上下文续航，还是框架扩展？如果目标不同，最值得参考的项目也不同。",
         bullets: [
           "做个人偏好/事实记忆，优先看 mem0、Agno、CrewAI 的写入与召回。",
+          "做本地优先、可审计 memory runtime，优先看 EverOS 的 Markdown-first、SQLite/LanceDB 和 cascade 设计。",
           "做长期对话或平台 agent，优先看 Letta 的分层方式。",
           "做关系和时间记忆，优先看 Graphiti。",
           "做框架型 agent，优先看 AutoGen、LlamaIndex、Agno、LangMem 的 memory 接口和默认策略。",
