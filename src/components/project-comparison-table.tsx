@@ -71,18 +71,19 @@ function ComparisonTable({
         <thead className={subtle ? "bg-zinc-900/80" : "bg-cyan-950/55"}>
           <tr>
             {[
-              ["Project", "w-[16%]"],
-              ["Route / Source", "w-[28%]"],
-              ["Write / Read", "w-[30%]"],
-              ["Storage / Fit / Risk", "w-[26%]"],
-            ].map(([label, width]) => (
+              ["项目", "Project", "w-[16%]"],
+              ["实现路线 / 源码入口", "Route / Source", "w-[28%]"],
+              ["写入 / 召回", "Write / Read", "w-[30%]"],
+              ["存储 / 场景 / 风险", "Storage / Fit / Risk", "w-[26%]"],
+            ].map(([label, hint, width]) => (
               <th
                 key={label}
-                className={`${width} border-b px-4 py-4 text-[11px] font-semibold uppercase tracking-[0.18em] ${
+                className={`${width} border-b px-4 py-4 ${
                   subtle ? "border-zinc-800 text-zinc-500" : "border-cyan-500/25 text-cyan-100"
                 }`}
               >
-                {label}
+                <div className="text-sm font-semibold tracking-[0.08em] text-white">{label}</div>
+                <div className="mt-1 text-[10px] uppercase tracking-[0.18em] opacity-70">{hint}</div>
               </th>
             ))}
           </tr>
@@ -111,8 +112,8 @@ function ComparisonTable({
                 <StackedCell
                   subtle={subtle}
                   sections={[
-                    { label: "Route", value: item.route },
-                    { label: "Core Paths", value: <SourcePaths paths={item.corePaths} subtle={subtle} /> },
+                    { label: "实现路线", value: item.route },
+                    { label: "源码入口", value: <SourcePaths paths={item.corePaths} subtle={subtle} /> },
                   ]}
                 />
               </td>
@@ -120,8 +121,8 @@ function ComparisonTable({
                 <StackedCell
                   subtle={subtle}
                   sections={[
-                    { label: "Write", value: item.writePath },
-                    { label: "Read", value: item.readPath },
+                    { label: "写入路径", value: item.writePath },
+                    { label: "召回路径", value: item.readPath },
                   ]}
                 />
               </td>
@@ -129,9 +130,9 @@ function ComparisonTable({
                 <StackedCell
                   subtle={subtle}
                   sections={[
-                    { label: "Storage", value: item.storage },
-                    { label: "Best Fit", value: item.bestFit },
-                    { label: "Risk", value: item.risk },
+                    { label: "存储后端", value: item.storage },
+                    { label: "适用场景", value: item.bestFit },
+                    { label: "主要风险", value: item.risk },
                   ]}
                 />
               </td>
