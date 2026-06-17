@@ -117,18 +117,14 @@ export function ProjectComparisonTable({ items }: { items: ProjectComparison[] }
           Primary Code Comparison
         </div>
         <h2 className="mt-4 text-3xl font-semibold text-white">最符合要求的 Agent Memory 核心实现</h2>
-        <p className="mt-4 max-w-5xl text-sm leading-8 text-zinc-300">
-          主表只保留以 agent memory 为核心能力、且能在源码中追踪写入、持久化、召回和上下文注入链路的项目。
-          表头第二行说明每列的判断含义；阅读时优先比较 Route、Write、Read 和 Storage，而不是只看项目名或 star 数。
-        </p>
         <div className="mt-5 grid gap-3 md:grid-cols-4">
           {[
-            "Write: 是否有明确记忆形成入口",
-            "Storage: 是否有长期持久化后端",
-            "Read: 是否能按需召回并进入上下文",
-            "Risk: 是否暴露污染、同步或治理成本",
+            "写入入口",
+            "长期持久化",
+            "召回注入",
+            "治理风险",
           ].map((item) => (
-            <div key={item} className="rounded-2xl border border-cyan-500/15 bg-cyan-500/5 px-4 py-3 text-xs leading-6 text-cyan-100/90">
+            <div key={item} className="rounded-2xl border border-cyan-500/15 bg-cyan-500/5 px-4 py-3 text-center text-xs font-medium tracking-[0.16em] text-cyan-100/90">
               {item}
             </div>
           ))}
@@ -141,11 +137,7 @@ export function ProjectComparisonTable({ items }: { items: ProjectComparison[] }
       {secondaryItems.length ? (
         <div className="rounded-[1.75rem] border border-zinc-800 bg-zinc-950/35 p-6">
           <div className="text-xs uppercase tracking-[0.24em] text-zinc-500">Secondary References</div>
-          <h3 className="mt-3 text-2xl font-semibold text-zinc-100">弱相关或框架型 memory 参考</h3>
-          <p className="mt-3 max-w-5xl text-sm leading-8 text-zinc-400">
-            这些项目包含 memory 接口、memory block 或用户记忆模块，但项目主体更偏 agent framework、RAG framework 或工具编排。
-            它们适合作为接口设计与集成方式参考，不作为最核心的 agent memory 系统样本。
-          </p>
+          <h3 className="mt-3 text-2xl font-semibold text-zinc-100">框架与接口型 memory 参考</h3>
           <div className="mt-5">
             <ComparisonTable items={secondaryItems} subtle />
           </div>
