@@ -4,9 +4,9 @@ export function ProjectComparisonTable({ items }: { items: ProjectComparison[] }
   return (
     <section className="section-shell rounded-[1.75rem] p-6">
       <div className="text-xs uppercase tracking-[0.24em] text-zinc-500">Code Comparison</div>
-      <h2 className="mt-3 text-3xl font-semibold text-white">本地已核源码项目对照表</h2>
+      <h2 className="mt-3 text-3xl font-semibold text-white">代码级核验样本对照表</h2>
       <p className="mt-4 max-w-4xl text-sm leading-8 text-zinc-300">
-        上面的路线地图可以容纳更多候选项目；这张表更像源码附录，只放当前本地已经拉取或已做代码级核验的代表项目。
+        路线地图覆盖符合筛选条件的代表项目；本表仅展示当前本地已经拉取或已做代码级核验的样本。
         横向比较时，重点看写入、读取、存储和风险是否匹配你的 agent 类型。
       </p>
 
