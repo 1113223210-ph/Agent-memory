@@ -33,7 +33,7 @@ export default function Page() {
               <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-tight text-white md:text-6xl">
                 把 agent memory
                 <span className="block bg-gradient-to-r from-sky-300 via-white to-violet-300 bg-clip-text text-transparent">
-                  拆成 6 个机制维度、2 个总结章和 1 个开源实现页
+                  拆成 6 个机制维度、2 个总结章和 2 个开源实现页
                 </span>
               </h1>
               <p className="mt-6 max-w-3xl text-base leading-8 text-zinc-300 md:text-lg">
@@ -98,10 +98,10 @@ export default function Page() {
               <div>
                 <div className="text-xs uppercase tracking-[0.24em] text-zinc-500">Six Dimensions</div>
                 <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
-                  6 个比较维度 + 2 个总结章 + 1 个开源实现页
+                  6 个比较维度 + 2 个总结章 + 2 个开源实现页
                 </h2>
                 <p className="mt-4 max-w-3xl text-sm leading-8 text-zinc-300">
-                  首页现在更像一张阅读地图：前面 6 章负责拆开 memory 的关键维度，中间 2 章负责把这些维度重新收束成整体视角和 agent 类型视角，最后 1 章再回到开源项目源码，看真实系统到底怎么写入、读取、存储和治理 memory。
+                  首页现在更像一张阅读地图：前面 6 章负责拆开 memory 的关键维度，中间 2 章负责把这些维度重新收束成整体视角和 agent 类型视角，最后 2 章再回到开源项目源码，看真实系统到底怎么写入、读取、存储、治理和接入 memory。
                 </p>
               </div>
 

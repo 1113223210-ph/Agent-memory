@@ -1,6 +1,117 @@
-import type { ProjectComparison } from "@/content/memory-content";
+"use client";
+
+import { useState } from "react";
+import {
+  getMechanismDetail,
+  type MechanismDetail,
+  type ProjectComparison,
+} from "@/content/memory-content";
+import { MechanismDetailDialog } from "@/components/mechanism-detail-dialog";
 
 const focusLabels = ["写入入口", "长期持久化", "召回注入", "治理风险"];
+
+const linkedTerms = [
+  { text: "长期语义记忆服务", detail: "mem0" },
+  { text: "add/search/history", detail: "mem0" },
+  { text: "事实抽取", detail: "mem0" },
+  { text: "semantic search", detail: "Vector Index / ANN Search" },
+  { text: "vector store", detail: "Vector Store" },
+  { text: "Vector stores", detail: "Vector Store" },
+  { text: "分层 agent memory", detail: "Letta" },
+  { text: "core blocks", detail: "Letta" },
+  { text: "archival passages", detail: "Letta" },
+  { text: "archival memory", detail: "Letta" },
+  { text: "时间知识图谱 memory", detail: "Graphiti" },
+  { text: "episode", detail: "Graphiti" },
+  { text: "BM25", detail: "Reranking / Hybrid Retrieval" },
+  { text: "图遍历", detail: "Temporal Knowledge Graph Memory" },
+  { text: "本地优先", detail: "EverOS" },
+  { text: "Markdown-first", detail: "EverOS" },
+  { text: "SQLite/LanceDB", detail: "EverOS" },
+  { text: "cascade", detail: "EverOS" },
+  { text: "Unified Memory", detail: "CrewAI" },
+  { text: "encoding flow", detail: "CrewAI" },
+  { text: "recall flow", detail: "CrewAI" },
+  { text: "LLM 规划", detail: "CrewAI" },
+  { text: "memory blocks", detail: "LlamaIndex" },
+  { text: "chat store", detail: "LlamaIndex" },
+  { text: "Memory 接口", detail: "AutoGen" },
+  { text: "update_context", detail: "AutoGen" },
+  { text: "memory manager", detail: "Agno" },
+  { text: "用户事实/profile", detail: "Agno" },
+  { text: "scope", detail: "Scope Isolation" },
+  { text: "冲突处理", detail: "Conflict Resolution" },
+  { text: "去重", detail: "Deduplication" },
+].sort((left, right) => right.text.length - left.text.length);
+
+function DetailKeyword({
+  children,
+  detail,
+  onOpen,
+}: {
+  children: React.ReactNode;
+  detail: string;
+  onOpen: (detail: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(detail)}
+      className="mechanism-link inline rounded-md border border-cyan-400/20 bg-cyan-400/10 px-1.5 py-0.5 font-medium text-cyan-100 shadow-[0_0_14px_rgba(34,211,238,0.08)]"
+    >
+      {children}
+    </button>
+  );
+}
+
+function LinkedText({
+  value,
+  onOpen,
+}: {
+  value: string;
+  onOpen: (detail: string) => void;
+}) {
+  const nodes: React.ReactNode[] = [];
+  let cursor = 0;
+
+  while (cursor < value.length) {
+    const next = linkedTerms.reduce<{
+      index: number;
+      text: string;
+      detail: string;
+    } | null>((candidate, term) => {
+      const index = value.indexOf(term.text, cursor);
+
+      if (index === -1) {
+        return candidate;
+      }
+
+      if (!candidate || index < candidate.index || (index === candidate.index && term.text.length > candidate.text.length)) {
+        return { index, text: term.text, detail: term.detail };
+      }
+
+      return candidate;
+    }, null);
+
+    if (!next) {
+      nodes.push(value.slice(cursor));
+      break;
+    }
+
+    if (next.index > cursor) {
+      nodes.push(value.slice(cursor, next.index));
+    }
+
+    nodes.push(
+      <DetailKeyword key={`${next.text}-${next.index}`} detail={next.detail} onOpen={onOpen}>
+        {next.text}
+      </DetailKeyword>
+    );
+    cursor = next.index + next.text.length;
+  }
+
+  return <>{nodes}</>;
+}
 
 function SourcePaths({ paths, subtle = false }: { paths: string[]; subtle?: boolean }) {
   return (
@@ -55,9 +166,11 @@ function StackedCell({
 function ComparisonTable({
   items,
   subtle = false,
+  onOpen,
 }: {
   items: ProjectComparison[];
   subtle?: boolean;
+  onOpen: (detail: string) => void;
 }) {
   return (
     <div
@@ -97,7 +210,11 @@ function ComparisonTable({
               }`}
             >
               <td className="px-4 py-5">
-                <div className="text-lg font-semibold text-white">{item.project}</div>
+                <div className="text-lg font-semibold text-white">
+                  <DetailKeyword detail={item.project} onOpen={onOpen}>
+                    {item.project}
+                  </DetailKeyword>
+                </div>
                 <div
                   className={`mt-3 inline-flex rounded-full border px-2.5 py-1 text-[11px] ${
                     subtle
@@ -112,7 +229,7 @@ function ComparisonTable({
                 <StackedCell
                   subtle={subtle}
                   sections={[
-                    { label: "实现路线", value: item.route },
+                    { label: "实现路线", value: <LinkedText value={item.route} onOpen={onOpen} /> },
                     { label: "源码入口", value: <SourcePaths paths={item.corePaths} subtle={subtle} /> },
                   ]}
                 />
@@ -121,8 +238,8 @@ function ComparisonTable({
                 <StackedCell
                   subtle={subtle}
                   sections={[
-                    { label: "写入路径", value: item.writePath },
-                    { label: "召回路径", value: item.readPath },
+                    { label: "写入路径", value: <LinkedText value={item.writePath} onOpen={onOpen} /> },
+                    { label: "召回路径", value: <LinkedText value={item.readPath} onOpen={onOpen} /> },
                   ]}
                 />
               </td>
@@ -130,9 +247,9 @@ function ComparisonTable({
                 <StackedCell
                   subtle={subtle}
                   sections={[
-                    { label: "存储后端", value: item.storage },
-                    { label: "适用场景", value: item.bestFit },
-                    { label: "主要风险", value: item.risk },
+                    { label: "存储后端", value: <LinkedText value={item.storage} onOpen={onOpen} /> },
+                    { label: "适用场景", value: <LinkedText value={item.bestFit} onOpen={onOpen} /> },
+                    { label: "主要风险", value: <LinkedText value={item.risk} onOpen={onOpen} /> },
                   ]}
                 />
               </td>
@@ -145,8 +262,12 @@ function ComparisonTable({
 }
 
 export function ProjectComparisonTable({ items }: { items: ProjectComparison[] }) {
+  const [activeDetail, setActiveDetail] = useState<MechanismDetail | null>(null);
   const primaryItems = items.filter((item) => item.tier !== "secondary");
   const secondaryItems = items.filter((item) => item.tier === "secondary");
+  const openDetail = (label: string) => {
+    setActiveDetail(getMechanismDetail(label) ?? null);
+  };
 
   return (
     <section className="space-y-8">
@@ -166,7 +287,7 @@ export function ProjectComparisonTable({ items }: { items: ProjectComparison[] }
           ))}
         </div>
         <div className="mt-6">
-          <ComparisonTable items={primaryItems} />
+          <ComparisonTable items={primaryItems} onOpen={openDetail} />
         </div>
       </div>
 
@@ -175,10 +296,11 @@ export function ProjectComparisonTable({ items }: { items: ProjectComparison[] }
           <div className="text-xs uppercase tracking-[0.24em] text-zinc-500">Secondary References</div>
           <h3 className="mt-3 text-2xl font-semibold text-zinc-100">框架与接口型 memory 参考</h3>
           <div className="mt-5">
-            <ComparisonTable items={secondaryItems} subtle />
+            <ComparisonTable items={secondaryItems} subtle onOpen={openDetail} />
           </div>
         </div>
       ) : null}
+      <MechanismDetailDialog detail={activeDetail} onClose={() => setActiveDetail(null)} />
     </section>
   );
 }

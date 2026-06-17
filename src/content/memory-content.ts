@@ -33,6 +33,19 @@ export interface ProjectComparison {
   risk: string;
 }
 
+export interface LibraryUsageCard {
+  project: string;
+  category: string;
+  status: string;
+  role: string;
+  sourceBasis: string;
+  sourcePaths: string[];
+  useSteps: string[];
+  minimalCode: string;
+  bestFor: string;
+  caveat: string;
+}
+
 export interface ImplementationRoute {
   title: string;
   label: string;
@@ -90,6 +103,7 @@ export interface Dimension {
   failureModes: string[];
   summaryLabel: string;
   projectComparisons?: ProjectComparison[];
+  libraryUsageCards?: LibraryUsageCard[];
   implementationRoutes?: ImplementationRoute[];
   plainMechanismGuides?: PlainMechanismGuide[];
 }
@@ -969,6 +983,190 @@ export const mechanismDetails: MechanismDetail[] = [
       "如果抽取策略过宽，Markdown-first 也会沉淀大量噪声。",
     ],
   },
+  {
+    key: "project-mem0",
+    title: "mem0",
+    aliases: ["mem0", "Mem0"],
+    oneLiner: "memory-first 的长期记忆服务路线，重点是把事实抽取、写入、检索和更新做成独立层。",
+    explanation:
+      "mem0 更像 agent 外挂的一套长期记忆服务。它不是只保存聊天历史，而是从消息中抽取可能长期有用的事实、偏好或用户信息，再写入可检索的存储。agent 下次需要时，通过 search 找回相关记忆并注入上下文。",
+    howItWorks: [
+      "写入入口围绕 add：输入消息后抽取候选记忆，生成 embedding，并与已有记忆做相似性判断。",
+      "读取入口围绕 search：用语义相似度、元数据、用户范围和可能的重排逻辑找回相关事实。",
+      "history / storage 记录记忆变化，方便追踪新增、更新和删除。",
+    ],
+    goodFor: [
+      "个人助手的长期事实、偏好和用户画像。",
+      "希望 memory 能独立于具体 agent 框架复用的产品。",
+      "需要快速接入长期语义记忆，而不是从零搭建整套系统。",
+    ],
+    watchOut: [
+      "自动抽取很方便，但也容易把一次性说法写成长期事实。",
+      "多用户、多项目必须把 scope、权限和删除能力设计清楚。",
+      "向量相似召回不天然理解事实冲突，仍需要更新和纠错策略。",
+    ],
+  },
+  {
+    key: "project-letta",
+    title: "Letta",
+    aliases: ["Letta", "MemGPT"],
+    oneLiner: "分层 agent memory 代表：核心记忆常驻，档案记忆检索，消息历史按预算进入上下文。",
+    explanation:
+      "Letta 延续 MemGPT 的思想，把有限上下文当成类似操作系统内存来管理。它把长期 agent 需要的记忆拆成 core memory、archival memory、recall/messages 等层，而不是把所有内容都丢进同一个向量库。",
+    howItWorks: [
+      "core blocks 保存稳定身份、偏好、目标等高优先级信息，通常直接进入 prompt。",
+      "archival passages 保存大量外部或历史资料，通过检索按需召回。",
+      "消息历史、摘要和 context window 计算共同决定当前回合能看到什么。",
+    ],
+    goodFor: [
+      "长期陪伴型 agent、项目协作 agent 和需要稳定人设/目标的系统。",
+      "需要解释哪些信息常驻、哪些信息按需召回的 memory architecture。",
+      "希望从单一向量库升级到多层 memory runtime 的项目。",
+    ],
+    watchOut: [
+      "核心记忆一旦写错，会持续影响 agent 行为。",
+      "多层之间如果没有 source of truth，容易出现重复和冲突。",
+      "实现复杂度高于简单 memory service，需要管理预算、摘要和检索边界。",
+    ],
+  },
+  {
+    key: "project-graphiti",
+    title: "Graphiti",
+    aliases: ["Graphiti"],
+    oneLiner: "面向动态长期记忆的时间知识图谱路线，重点表达实体、关系和关系随时间变化。",
+    explanation:
+      "Graphiti 不把记忆只看成一堆相似文本块，而是把 episode 中的人、组织、项目、事件抽成节点和边，并保留时间信息。它适合需要回答“谁和谁有关、什么时候变了、为什么现在这条关系更重要”的场景。",
+    howItWorks: [
+      "add_episode 接收事件或文本，抽取实体、关系和时间事实。",
+      "写入前做实体解析、去重和关系更新，避免图里出现大量重复节点。",
+      "搜索时结合 BM25、向量检索、图遍历和 rerank，把关系证据找回。",
+    ],
+    goodFor: [
+      "客户关系、组织知识、项目事件流等关系密集场景。",
+      "需要时间感的长期记忆，例如关系状态会更新或失效。",
+      "希望记忆召回有可解释路径，而不只是 top-k 文本块。",
+    ],
+    watchOut: [
+      "实体消歧和脏关系治理是主要成本。",
+      "普通文档问答未必需要图谱，强行建图会增加复杂度。",
+      "抽取错误会变成图里的错误边，后续检索会被持续污染。",
+    ],
+  },
+  {
+    key: "project-everos",
+    title: "EverOS",
+    aliases: ["EverOS"],
+    oneLiner: "本地优先的 memory runtime，把可读文件、索引、检索和后台整理放在一套系统里。",
+    explanation:
+      "EverOS 的特点是 Markdown-first 和 local-first。它希望 memory 不只是黑盒数据库里的向量，而是可审计、可迁移、可被人阅读的长期资产，同时用 SQLite、LanceDB 等索引层支撑 agent 检索。",
+    howItWorks: [
+      "memorize 把会话或事件切分、抽取为 user profile、atomic fact、episode、skill 等 memory cell。",
+      "Markdown 文件承接人类可读的沉淀，SQLite 管状态和元数据，LanceDB 管向量和全文检索。",
+      "search、cascade、prompt slots 把记忆召回、整理并放回当前上下文。",
+    ],
+    goodFor: [
+      "本地优先助手、个人知识库和小团队长期记忆。",
+      "希望 memory 能被人工审阅、备份、版本管理和迁移的系统。",
+      "需要把事实、经验、技能和任务线索统一沉淀的 agent。",
+    ],
+    watchOut: [
+      "文件、索引和运行时状态必须保持同步。",
+      "本地优先降低云依赖，但安装、同步和迁移成本更高。",
+      "如果抽取过宽，Markdown-first 也会变成噪声堆积。",
+    ],
+  },
+  {
+    key: "project-crewai",
+    title: "CrewAI",
+    aliases: ["CrewAI"],
+    oneLiner: "框架内的 Unified Memory 路线，用编码流程处理写入，用召回流程处理浅召回和深召回。",
+    explanation:
+      "CrewAI 的 memory 更接近 agent / crew 协作框架里的统一记忆模块。它关注记忆如何从任务和对话中进入存储，以及如何在后续任务中按用户、agent、crew 或上下文范围召回。",
+    howItWorks: [
+      "remember / remember_many 进入 encoding flow，做 embedding、相似记忆查找和批量去重。",
+      "LLM 可以参与规划 insert、update、delete 或 noop，让写入更像治理流程。",
+      "recall flow 可走 shallow / deep 查询，结合子查询、scope、并行搜索、时间和重要性排序。",
+    ],
+    goodFor: [
+      "多 agent / crew 协作场景里的任务记忆和用户事实。",
+      "需要在框架内统一管理写入、召回和多后端存储的应用。",
+      "希望研究 LLM 驱动写入治理的实现路线。",
+    ],
+    watchOut: [
+      "LLM 参与写入治理意味着提示质量和评估很关键。",
+      "如果 scope 设置不清楚，crew、agent、user 之间的记忆容易串线。",
+      "框架能力需要结合实际源码版本核查，不能只看文档宣称。",
+    ],
+  },
+  {
+    key: "project-llamaindex",
+    title: "LlamaIndex",
+    aliases: ["LlamaIndex", "LlamaIndex Memory"],
+    oneLiner: "可组合 memory blocks 路线，把短期聊天记录、摘要、向量记忆块和上下文预算拼成模块。",
+    explanation:
+      "LlamaIndex 更像 memory 组件库。它提供 chat memory buffer、summary buffer、vector memory block 等构件，让 RAG agent 或文档助手按需要组合短期历史、长期片段和外部知识。",
+    howItWorks: [
+      "消息进入 chat store 或 buffer，先服务短期对话连续性。",
+      "超出预算时可以摘要、flush 或转入 memory blocks。",
+      "当前回合把聊天历史、memory block 检索结果和文档检索结果一起组装进上下文。",
+    ],
+    goodFor: [
+      "RAG agent、文档问答和需要快速拼装 memory 策略的应用。",
+      "比较 buffer、summary、vector block 等机制如何协作。",
+      "希望在同一框架里实验不同 memory 组合的团队。",
+    ],
+    watchOut: [
+      "模块多不代表默认架构就完整，flush、排序和预算仍要调。",
+      "如果长期事实和文档知识混在一起，召回解释会变模糊。",
+      "治理策略通常需要业务层补齐。",
+    ],
+  },
+  {
+    key: "project-autogen",
+    title: "AutoGen",
+    aliases: ["AutoGen"],
+    oneLiner: "以 Memory 接口为核心的框架路线，重点是让不同 memory 后端能接入 agent 生命周期。",
+    explanation:
+      "AutoGen 的价值主要在接口和生命周期集成。它定义 memory 如何 add、clear、update_context，让列表记忆、Chroma、Redis、Mem0 adapter 等后端能被 agent 使用。",
+    howItWorks: [
+      "Memory 实现负责保存、清理和关闭资源。",
+      "agent 推理前调用 update_context，把 memory 查询结果注入 model context。",
+      "具体写入策略由不同 memory 实现或用户代码决定。",
+    ],
+    goodFor: [
+      "多 agent 框架中接入不同 memory 后端。",
+      "需要把 memory 作为可替换接口，而不是绑定某个数据库。",
+      "研究 framework memory interface 的边界。",
+    ],
+    watchOut: [
+      "接口不是完整记忆系统，写入门控和污染治理通常需要自己做。",
+      "默认列表记忆更像上下文辅助，不等于长期 memory architecture。",
+      "后端不同，召回质量和删除/更新能力差异很大。",
+    ],
+  },
+  {
+    key: "project-agno",
+    title: "Agno",
+    aliases: ["Agno"],
+    oneLiner: "偏用户事实和 profile 的轻量长期记忆路线，适合个人助手类场景。",
+    explanation:
+      "Agno 的 memory manager 重点是让 agent 能维护用户相关记忆，比如新增、更新、删除偏好或事实。它比图谱或分层 runtime 更轻，适合在助手产品中快速加入用户画像能力。",
+    howItWorks: [
+      "LLM 可通过 memory 工具新增、更新、删除或清空用户记忆。",
+      "summarize strategy 可以从对话中生成更紧凑的用户事实。",
+      "读取时可用 last_n、first_n、agentic 等策略，把相关 profile 带回上下文。",
+    ],
+    goodFor: [
+      "个人助手、用户偏好和轻量 profile 记忆。",
+      "需要工具化控制用户记忆增删改查的 agent。",
+      "不需要复杂图关系，但需要跨会话连续性的产品。",
+    ],
+    watchOut: [
+      "偏 profile，不适合直接承担复杂任务状态或关系图谱。",
+      "自动更新用户事实时要防止过期信息和一次性偏好污染长期画像。",
+      "存储和作用域策略取决于具体配置，需要上线前核查。",
+    ],
+  },
 ];
 
 const mechanismAliasMap = new Map<string, MechanismDetail>();
@@ -987,9 +1185,9 @@ export function getMechanismDetail(label: string) {
 }
 
 export const heroStats = [
-  { label: "比较维度", value: "6+2+1", note: "6 个设计维度，2 个总结章节，1 个开源实现页" },
+  { label: "比较维度", value: "6+2+2", note: "6 个设计维度，2 个总结章节，2 个开源实现页" },
   { label: "基础骨架", value: "3", note: "Short-term / Long-term / Working Memory" },
-  { label: "详情页面", value: "9", note: "机制、总结和开源源码路线都单独成页" },
+  { label: "详情页面", value: "10", note: "机制、总结、源码对比和库使用指南都单独成页" },
 ];
 
 export const dimensions: Dimension[] = [
@@ -2724,6 +2922,373 @@ export const dimensions: Dimension[] = [
       "只接向量库，不做 metadata、scope、冲突和删除，短期看起来能用，长期变脏",
       "盲目上 graph memory，但业务里的关系并不复杂，反而增加抽取和维护负担",
       "没有验证写入路径，导致 agent 把临时指令、错误观察和工具噪声都当成长期记忆",
+    ],
+  },
+  {
+    id: "open-source-library-guide",
+    navLabel: "库怎么用",
+    eyebrow: "10. Library Usage Guide",
+    title: "开源 Agent Memory 库的作用与使用方式",
+    accent: "green",
+    thesis: "这一章从“能不能拿来用”的角度阅读开源 Agent Memory 库：它们分别解决什么问题、源码入口在哪里、最小接入流程是什么、上线时还要补哪些边界。",
+    definition: "第 9 章回答实现路线如何比较，第 10 章回答具体库怎么落地。这里不再按 star 或表格排序，而是按工程接入习惯拆解：先判断库的定位，再看源码入口，再看 add / remember / search / recall / update_context 这些最小操作，最后判断它适不适合你的 agent 类型。",
+    summaryLabel: "看开源 memory 库怎么接入真实 agent",
+    plainExplanation:
+      "选 memory 库时，最容易踩坑的是只看项目名和宣传语。更稳的方式是看它给你的第一个 API 是什么：mem0 给 add/search，Cognee 给 remember/recall，Graphiti 给 add_episode/search，LangMem 给 memory manager 和 searcher，Letta 给带 memory blocks 的 stateful agent。这些入口决定了你实际怎么把记忆写进去、怎么找回来、怎么喂给模型。",
+    whenToUse: [
+      "需要把某个开源 memory 库接入自己的 agent，而不只是理解概念。",
+      "需要判断 mem0、Letta、Cognee、Graphiti、EverOS、LangMem、A-MEM 等库分别适合什么场景。",
+      "需要从源码入口理解 add/search/remember/recall/update_context 的真实作用。",
+      "需要避免把 framework memory 接口、短期 buffer 或 coding session compaction 当成完整 memory 系统。",
+    ],
+    mainstreamMechanisms: [
+      "Dedicated Memory Service",
+      "Layered Agent Memory",
+      "Temporal Knowledge Graph Memory",
+      "Framework Memory Interface",
+      "Local-first Memory OS",
+    ],
+    pipeline: [
+      { title: "Pick Library Role", description: "先判断它是 memory service、agent runtime、graph memory、framework module，还是研究型 memory system。" },
+      { title: "Find Entry API", description: "找到最小入口：add/search、remember/recall、add_episode/search、create_memory_manager、update_context。" },
+      { title: "Connect Storage", description: "确认它依赖向量库、图数据库、SQLite、Markdown、本地 Chroma，还是框架的 BaseStore。" },
+      { title: "Inject Context", description: "看召回结果如何进入 prompt，是你手动拼接，还是库/框架自动 update_context。" },
+      { title: "Add Governance", description: "上线前补 scope、删除、更正、重复、冲突、过期和审计，不要只接入新增记忆。" },
+    ],
+    designQuestions: [
+      "这个库最小接入 API 是什么，它直接解决写入、召回、注入中的哪一步？",
+      "它是完整 memory 系统，还是只提供 framework memory interface？",
+      "它默认存在哪里：向量库、图数据库、Markdown、SQL、BaseStore，还是远端服务？",
+      "它是否提供删除、更正、去重、scope isolation，还是需要业务层自己补？",
+      "把它接进当前 agent 后，哪一段 prompt 或工作流会真正改变？",
+    ],
+    mechanisms: [],
+    implementationRoutes: [
+      {
+        title: "API-first Memory Service",
+        label: "add / search",
+        projects: ["mem0"],
+        whatItSolves: "快速给 agent 加长期事实和偏好记忆。",
+        howToRead: "重点读 Memory / MemoryClient 的 add、search、history 与 vector store adapter。",
+        typicalStack: "LLM extraction + embedding + vector store + metadata filters。",
+        caveat: "接入快，但长期污染治理仍要自己把 scope 和删除做好。",
+      },
+      {
+        title: "Stateful Agent Runtime",
+        label: "agent + blocks",
+        projects: ["Letta"],
+        whatItSolves: "把 memory 和 agent 生命周期绑定，让核心记忆、档案记忆、消息历史各自分层。",
+        howToRead: "重点看 memory_blocks、archival_memory_insert/search 和 message/recall 流程。",
+        typicalStack: "Core memory blocks + archival passages + recall memory + context window management。",
+        caveat: "适合长期 agent，但比单独 SDK 更重。",
+      },
+      {
+        title: "Graph Memory Platform",
+        label: "remember / graph",
+        projects: ["Cognee", "Graphiti"],
+        whatItSolves: "把文档、事件或对话变成可检索、可关联的知识图谱或时间图谱。",
+        howToRead: "重点看 remember/recall 或 add_episode/search 如何把信息变成节点、边、时间事实。",
+        typicalStack: "Ingestion + entity extraction + graph DB + vector/BM25/hybrid search。",
+        caveat: "关系和时间重要时很有价值，普通短问答可能过重。",
+      },
+      {
+        title: "Framework Memory Module",
+        label: "store / update_context",
+        projects: ["LangMem", "LlamaIndex", "AutoGen", "Agno"],
+        whatItSolves: "把 memory 嵌入现有 agent framework，而不是单独跑一套 memory 平台。",
+        howToRead: "重点看 manager/searcher、memory blocks、MemoryContent、update_context、UserMemory。",
+        typicalStack: "Framework store + memory tools / blocks + context injection。",
+        caveat: "接口灵活不等于治理完整，上线前仍要补策略。",
+      },
+    ],
+    plainMechanismGuides: [],
+    libraryUsageCards: [
+      {
+        project: "mem0",
+        category: "Memory Service",
+        status: "可直接接入",
+        role: "给任意 agent 增加长期事实、偏好和用户画像记忆。它把抽取、存储、搜索和历史变更封装成 add/search/history 这类 API。",
+        sourceBasis: "README 展示了 Memory().search 与 Memory().add 的聊天接入方式；本地源码包含 mem0/memory/main.py、storage.py 和多个 vector store adapter。",
+        sourcePaths: ["mem0/README.md", "mem0/memory/main.py", "mem0/memory/storage.py", "mem0/vector_stores/*"],
+        useSteps: [
+          "安装 mem0ai，或选择 self-hosted / hosted 平台。",
+          "在每轮回复前用 search 按 user_id 找回相关记忆。",
+          "把返回记忆拼入 system prompt 或工作记忆。",
+          "回复后把用户消息和助手回复交给 add，让系统抽取长期事实。",
+          "上线前补 user_id、agent_id、project_id、删除和纠错策略。",
+        ],
+        minimalCode:
+          "from mem0 import Memory\n\nmemory = Memory()\nmemories = memory.search(query=user_msg, filters={\"user_id\": user_id}, top_k=3)\ncontext = \"\\n\".join(f\"- {m['memory']}\" for m in memories[\"results\"])\n# call your LLM with context\nmemory.add(messages, user_id=user_id)",
+        bestFor: "个人助手、客服、教育、健康、生产力工具等需要长期用户事实和偏好记忆的 agent。",
+        caveat: "默认长期写入很方便，但要避免把一次性话语、错误工具结果和临时偏好写成稳定事实。",
+      },
+      {
+        project: "Letta",
+        category: "Stateful Agent Runtime",
+        status: "适合长期 agent",
+        role: "直接创建带 memory blocks 的 stateful agent，让核心记忆常驻上下文，并用外部档案记忆承接更长历史。",
+        sourceBasis: "README 展示了 letta-client 创建 agent 时传入 memory_blocks；源码的 prompts 和 function_sets 中能看到 core memory 与 archival memory 工具。",
+        sourcePaths: ["letta/README.md", "letta/schemas/memory.py", "letta/schemas/block.py", "letta/functions/function_sets/base.py"],
+        useSteps: [
+          "安装 letta-client，准备 Letta API key 或自托管服务。",
+          "创建 agent 时定义 human、persona 等 memory_blocks。",
+          "通过 client.agents.messages.create 与 agent 对话。",
+          "让 agent 使用 core memory / archival memory 工具维护长期信息。",
+          "为核心记忆设置审查规则，避免错误内容长期常驻。",
+        ],
+        minimalCode:
+          "from letta_client import Letta\n\nclient = Letta(api_key=LETTA_API_KEY)\nagent = client.agents.create(\n    model=\"openai/gpt-5.2\",\n    memory_blocks=[{\"label\": \"human\", \"value\": \"User profile...\"}],\n)\nresponse = client.agents.messages.create(agent_id=agent.id, input=\"What do you know about me?\")",
+        bestFor: "长期陪伴、项目协作、个人数字分身、需要稳定人设和长期上下文的 agent。",
+        caveat: "Letta 是完整 agent runtime，不只是轻量 memory SDK；如果你只想给已有应用补一点偏好记忆，可能比 mem0 / Agno 更重。",
+      },
+      {
+        project: "Cognee",
+        category: "AI Memory Platform",
+        status: "可直接接入",
+        role: "把文档、对话和用户事实变成长期 AI memory，并通过 knowledge graph、向量和自动路由召回给 agent。",
+        sourceBasis: "README 给出 remember、recall、forget、CLI 和 MCP 的接入方式；AGENTS.md 说明 API、CLI、MCP、UI 的项目结构。",
+        sourcePaths: ["cognee/README.md", "cognee/AGENTS.md", "cognee/cognee/api/*", "cognee/cognee-mcp/*"],
+        useSteps: [
+          "安装 cognee，并配置 LLM_API_KEY 或对应模型供应商。",
+          "用 remember 写入长期知识，必要时带 session_id 做会话隔离。",
+          "用 recall 查询，Cognee 自动选择合适搜索策略。",
+          "用 forget 删除 dataset 或清理记忆。",
+          "需要 agent 工具化接入时，可使用 CLI、API server 或 MCP server。",
+        ],
+        minimalCode:
+          "import cognee\n\nawait cognee.remember(\"Cognee turns documents into AI memory.\")\nawait cognee.remember(\"User prefers detailed explanations.\", session_id=\"chat_1\")\nresults = await cognee.recall(\"What does the user prefer?\", session_id=\"chat_1\")\nawait cognee.forget(dataset=\"main_dataset\")",
+        bestFor: "企业知识、文档记忆、跨会话 agent 记忆、需要图谱和向量混合能力的知识型 agent。",
+        caveat: "Cognee 更像 memory platform；接入前要明确 dataset、tenant、session 和权限边界。",
+      },
+      {
+        project: "Graphiti",
+        category: "Temporal Graph Memory",
+        status: "适合关系型记忆",
+        role: "把事件、对话和 JSON 数据写成带时间的实体关系图，用图搜索、向量、BM25 和重排找回动态事实。",
+        sourceBasis: "quickstart 示例展示 Graphiti 初始化、build_indices_and_constraints、add_episode 和 search；源码包含 nodes、edges、search 模块。",
+        sourcePaths: ["graphiti/examples/quickstart/quickstart_neo4j.py", "graphiti_core/graphiti.py", "graphiti_core/nodes.py", "graphiti_core/search/search.py"],
+        useSteps: [
+          "准备 Neo4j、FalkorDB、Kuzu 或 Neptune 等图后端。",
+          "初始化 Graphiti，并建立索引和约束。",
+          "用 add_episode 写入文本、消息或结构化 JSON。",
+          "用 search 查询相关关系和事实。",
+          "把搜索结果整理成 evidence，再注入 agent prompt。",
+        ],
+        minimalCode:
+          "from graphiti_core import Graphiti\nfrom graphiti_core.nodes import EpisodeType\n\ngraphiti = Graphiti(neo4j_uri, neo4j_user, neo4j_password)\nawait graphiti.build_indices_and_constraints()\nawait graphiti.add_episode(name=\"event-1\", episode_body=text, source=EpisodeType.text)\nresults = await graphiti.search(\"What changed about this customer?\")",
+        bestFor: "客户关系、组织知识、项目事件流、角色关系、需要时间变化解释的长期记忆。",
+        caveat: "图谱记忆的主要成本是实体消歧、脏边清理和图维护；关系不复杂时不要过早上图。",
+      },
+      {
+        project: "EverOS",
+        category: "Local-first Memory OS",
+        status: "本地优先",
+        role: "把 agent memory 以 Markdown-first 方式沉淀到本地，同时用 SQLite 和 LanceDB 做派生索引和混合检索。",
+        sourceBasis: "QUICKSTART 展示服务/API、Markdown 目录结构和 cascade 重建索引；README 说明 service、memory、persistence 分层。",
+        sourcePaths: ["everos/QUICKSTART.md", "everos/src/everos/service/memorize.py", "everos/src/everos/service/search.py", "everos/src/everos/memory/cascade/*"],
+        useSteps: [
+          "启动 EverOS service 或使用 CLI/API。",
+          "把会话级事件提交给 memorize，生成 episode、atomic fact、profile、skill 等 memory cell。",
+          "用 search 按用户、session、kind、query 召回相关记忆。",
+          "让 cascade watcher 同步 Markdown 与派生索引。",
+          "用文件系统和版本管理审计长期记忆。",
+        ],
+        minimalCode:
+          "POST /memorize\n{\n  \"user_id\": \"alice\",\n  \"session_id\": \"demo-001\",\n  \"messages\": [{\"role\": \"user\", \"content\": \"I climb in Yosemite every spring.\"}]\n}\n\nPOST /search\n{\"user_id\": \"alice\", \"query\": \"Where does Alice climb?\"}",
+        bestFor: "本地优先助手、隐私敏感记忆、小团队知识沉淀、需要人类可读和可迁移 memory 的系统。",
+        caveat: "本地可审计是优势，但也意味着要管理文件、索引、同步和部署复杂度。",
+      },
+      {
+        project: "LangMem",
+        category: "LangGraph Memory Toolkit",
+        status: "框架内接入",
+        role: "给 LangGraph / LangChain 生态提供长期记忆抽取、搜索、store 管理和 memory tools。",
+        sourceBasis: "src/langmem/__init__.py 暴露 create_memory_manager、create_memory_store_manager、create_search_memory_tool；extraction.py 给出结构化记忆和 BaseStore 示例。",
+        sourcePaths: ["langmem/src/langmem/__init__.py", "langmem/src/langmem/knowledge/extraction.py", "langmem/examples/standalone_examples/custom_store_example.py"],
+        useSteps: [
+          "准备 LangGraph BaseStore，例如 InMemoryStore 或持久化 store。",
+          "用 create_memory_store_manager 定义抽取模型、namespace 和 schema。",
+          "对新对话调用 manager，让它新增或更新长期记忆。",
+          "用 create_memory_searcher 或 create_search_memory_tool 在推理前召回相关记忆。",
+          "用 namespace 区分用户、团队、项目和 agent。",
+        ],
+        minimalCode:
+          "from langmem import create_memory_store_manager, create_memory_searcher\nfrom langgraph.store.memory import InMemoryStore\n\nstore = InMemoryStore(index={\"dims\": 1536, \"embed\": \"openai:text-embedding-3-small\"})\nmanager = create_memory_store_manager(\"openai:gpt-4o-mini\", store=store, namespace=(\"memories\", \"user-123\"))\nawait manager.ainvoke({\"messages\": conversation})\nsearcher = create_memory_searcher(\"openai:gpt-4o-mini\", namespace=(\"memories\", \"{langgraph_user_id}\"))",
+        bestFor: "已经使用 LangGraph / LangChain 的 agent，需要标准化长期记忆抽取、更新和检索。",
+        caveat: "LangMem 是工具包，不是独立平台；BaseStore、namespace、写入策略和治理仍要按应用设计。",
+      },
+      {
+        project: "A-MEM",
+        category: "Agentic Memory Research",
+        status: "研究型实现",
+        role: "用 AgenticMemorySystem 管理可演化 memory note，自动生成 tags、context、keywords，并用 ChromaDB 做语义搜索。",
+        sourceBasis: "README 和 examples/sovereign_memory.py 展示 AgenticMemorySystem、add_note、read、search_agentic、update、delete；tests 覆盖关系和 consolidation。",
+        sourcePaths: ["a-mem/README.md", "a-mem/agentic_memory/memory_system.py", "a-mem/examples/sovereign_memory.py", "a-mem/tests/test_memory_system.py"],
+        useSteps: [
+          "从源码安装 A-MEM，配置 embedding model 和 LLM backend。",
+          "初始化 AgenticMemorySystem。",
+          "用 add_note 写入记忆，可附带 tags、category、timestamp。",
+          "用 read 或 search_agentic 读取与搜索。",
+          "需要时调用 update、delete、consolidate_memories 或关系查找方法。",
+        ],
+        minimalCode:
+          "from agentic_memory.memory_system import AgenticMemorySystem\n\nmemory_system = AgenticMemorySystem(\n    model_name=\"all-MiniLM-L6-v2\",\n    llm_backend=\"openai\",\n    llm_model=\"gpt-4o-mini\",\n)\nmemory_id = memory_system.add_note(\"User values local processing.\", tags=[\"privacy\"])\nresults = memory_system.search_agentic(\"sovereignty\", k=3)",
+        bestFor: "研究 agentic memory、经验组织、记忆演化和 Zettelkasten 式链接的原型系统。",
+        caveat: "它更像研究实现，不是开箱即用的生产平台；部署、权限、多租户和观测需要自己补。",
+      },
+      {
+        project: "LlamaIndex Memory",
+        category: "Composable Memory Blocks",
+        status: "组件化接入",
+        role: "在 LlamaIndex agent / chat engine 中组合短期 chat memory、summary buffer、vector memory 和 memory blocks。",
+        sourceBasis: "core/memory 中有 Memory、ChatMemoryBuffer、ChatSummaryMemoryBuffer、VectorMemory、Static/Vector/Fact memory blocks。",
+        sourcePaths: ["llama-index-core/llama_index/core/memory/memory.py", "llama-index-core/llama_index/core/memory/chat_memory_buffer.py", "llama-index-core/llama_index/core/memory/memory_blocks/*"],
+        useSteps: [
+          "选择短期 buffer、summary buffer 或 Memory + memory blocks。",
+          "把 Memory 对象传给 agent 或 chat engine。",
+          "在每轮消息后让 memory 记录聊天历史或 flush 到块。",
+          "需要长期语义召回时加入 VectorMemoryBlock 或 VectorMemory。",
+          "按 token_limit 和 block priority 调整上下文预算。",
+        ],
+        minimalCode:
+          "from llama_index.core.memory import Memory, ChatMemoryBuffer\n\nchat_memory = ChatMemoryBuffer.from_defaults(token_limit=3000)\n# For richer setups, compose Memory with StaticMemoryBlock / VectorMemoryBlock.\n# Pass memory into your LlamaIndex agent or chat engine.",
+        bestFor: "RAG agent、文档助手、已经基于 LlamaIndex 的应用，需要灵活组合短期和长期记忆块。",
+        caveat: "组件多但不会自动替你做业务治理；flush、block priority、检索排序和 token budget 需要调。",
+      },
+      {
+        project: "AutoGen Memory",
+        category: "Framework Memory Interface",
+        status: "接口型接入",
+        role: "在 AutoGen agent 生命周期中接入 ListMemory、ChromaDBVectorMemory、RedisMemory、Mem0Memory 等后端，并通过 update_context 注入模型上下文。",
+        sourceBasis: "autogen_core.memory 定义 Memory、MemoryContent、ListMemory；autogen_ext.memory 提供 ChromaDB、Redis、Mem0 adapter。",
+        sourcePaths: ["autogen_core/memory/_base_memory.py", "autogen_core/memory/_list_memory.py", "autogen_ext/memory/chromadb/_chromadb.py", "autogen_ext/memory/mem0/_mem0.py"],
+        useSteps: [
+          "选择 Memory 实现：ListMemory 做简单列表，ChromaDB/Redis 做向量记忆，Mem0 adapter 接外部服务。",
+          "用 MemoryContent 写入偏好、事实或上下文。",
+          "在 agent 调用前执行 update_context。",
+          "需要语义搜索时配置对应 vector memory 后端。",
+          "把写入策略放在 agent 或业务层，不要只依赖接口本身。",
+        ],
+        minimalCode:
+          "from autogen_core.memory import ListMemory, MemoryContent\n\nmemory = ListMemory(name=\"user_memory\")\nawait memory.add(MemoryContent(content=\"User prefers formal language\", mime_type=\"text/plain\"))\nawait memory.update_context(model_context)",
+        bestFor: "已经使用 AutoGen 的多 agent 系统，希望统一 memory 接口并替换不同后端。",
+        caveat: "AutoGen 提供的是 memory interface 和 adapters；完整长期记忆策略仍要自己设计。",
+      },
+      {
+        project: "Agno Memory",
+        category: "User Profile Memory",
+        status: "轻量接入",
+        role: "围绕用户事实和 profile 管理长期记忆，提供 UserMemory、MemoryManager、摘要压缩和增删改查工具化能力。",
+        sourceBasis: "agno/memory/manager.py 包含 add_user_memory、replace_user_memory、delete_user_memory、update_memory_task；strategies/summarize.py 处理记忆压缩。",
+        sourcePaths: ["agno/agno/memory/manager.py", "agno/agno/memory/strategies/summarize.py", "agno/agno/memory/__init__.py"],
+        useSteps: [
+          "为 agent 配置 Agno memory DB / storage。",
+          "用 MemoryManager 管理 UserMemory。",
+          "通过 add_user_memory、replace_user_memory、delete_user_memory 做显式维护。",
+          "用 update_memory_task 让 LLM 根据用户消息决定新增、更新或删除。",
+          "用 summarize strategy 压缩同一用户的多条记忆。",
+        ],
+        minimalCode:
+          "from agno.memory import MemoryManager, UserMemory\n\nmanager = MemoryManager(model=model, db=memory_db)\nmemory_id = manager.add_user_memory(UserMemory(memory=\"User likes concise answers\"), user_id=\"user-123\")\nmanager.update_memory_task(\"User now prefers detailed explanations\", user_id=\"user-123\")",
+        bestFor: "个人助手、轻量用户画像、偏好记忆和不需要复杂图谱的跨会话连续性。",
+        caveat: "它偏 profile / user memory；复杂任务状态、关系图谱和经验演化要另行设计。",
+      },
+    ],
+    examples: [
+      {
+        title: "从最小 API 判断接入成本",
+        scenario: "mem0 和 Cognee 的 remember/add/search/recall 更像独立 memory layer；LangMem、LlamaIndex、AutoGen、Agno 更像框架内 memory module；Letta 更像完整 stateful agent runtime。",
+        takeaway: "API 形态会决定接入成本：独立服务接入快，runtime 能力强但更重，framework module 灵活但治理要自己补。",
+      },
+      {
+        title: "从存储后端判断适用场景",
+        scenario: "mem0 更偏向量和混合检索，Graphiti/Cognee 更偏图谱与关系，EverOS 强调 Markdown-first + 本地派生索引，LangMem 依赖 LangGraph store。",
+        takeaway: "不要只问“有没有 memory”，要问“它把什么东西存成什么形态”。",
+      },
+      {
+        title: "从上下文注入判断真实效果",
+        scenario: "有些库返回 memories，需要你手动拼 prompt；有些框架用 update_context 或 memory blocks 自动进入模型上下文；有些 runtime 让核心记忆常驻。",
+        takeaway: "记忆必须回到 working memory 才会影响 agent，存储只是半条链路。",
+      },
+      {
+        title: "从治理能力判断是否能上线",
+        scenario: "研究型或组件型库通常能展示 add/search，但多用户 scope、删除、更正、审计、冲突处理未必开箱即用。",
+        takeaway: "生产可用性主要看治理，不只看 demo 能不能搜回来。",
+      },
+    ],
+    misconceptions: [
+      "误解一：能 pip install 的 memory 库，就一定能直接生产上线。",
+      "误解二：有 search API，就说明上下文注入和 token budget 已经解决。",
+      "误解三：图谱 memory 一定优于向量 memory，实际取决于关系和时间是不是核心需求。",
+      "误解四：framework memory module 等于完整 memory system。",
+      "误解五：研究型 memory 项目能跑 demo，就已经覆盖多用户、权限、删除和审计。",
+      "误解六：只要把每轮对话都 add 进去，agent 就会越来越懂用户。",
+    ],
+    deepDive: [
+      {
+        title: "库的作用要按边界理解",
+        body: "开源 memory 库大致分成四类：独立 memory service、stateful agent runtime、graph memory platform、framework memory module。它们不是同一层东西，接入方式和责任边界也不同。",
+        bullets: [
+          "mem0、Cognee 更像外部 memory layer，agent 调它们的 API。",
+          "Letta 更像 agent runtime，memory 和 agent 生命周期绑定。",
+          "Graphiti 更像 temporal graph memory，重点不是聊天历史，而是实体关系和时间事实。",
+          "LangMem、LlamaIndex、AutoGen、Agno 更像框架模块，适合嵌入已有 agent 架构。",
+        ],
+      },
+      {
+        title: "怎么使用要从写入入口开始",
+        body: "真正接入时先别看架构图，先看第一条记忆怎么进入系统。入口函数通常能暴露库的设计哲学：add 偏记录事实，remember 偏平台化封装，add_episode 偏事件图谱，create_memory_manager 偏抽取和更新流程。",
+        bullets: [
+          "写入入口越自动，越要关心污染治理。",
+          "写入入口越显式，越容易控制，但也更依赖业务主动调用。",
+          "研究型库常把关系生成和演化放在写入后处理里。",
+          "framework module 需要你决定什么时候调用写入。",
+        ],
+      },
+      {
+        title: "读取接口不等于 prompt 注入",
+        body: "很多库能 search 或 recall，但返回结果如何进入 prompt 仍然是工程问题。memory 的最终效果取决于 working memory 组装：召回多少、按什么排序、用什么格式注入、和系统指令/工具状态如何共存。",
+        bullets: [
+          "mem0、Cognee、Graphiti 常需要调用方把返回结果整理进 prompt。",
+          "AutoGen 的 update_context 和 LlamaIndex 的 memory blocks 更接近框架级注入。",
+          "Letta 的 core memory blocks 属于常驻注入，写错的影响也更持久。",
+          "召回结果最好带来源、时间和作用域，否则难以调试。",
+        ],
+      },
+      {
+        title: "上线前要补的不是代码示例，而是治理",
+        body: "多数 README 展示的是最小成功路径：安装、写入、查询。但生产里的难点是删除、更正、冲突、scope、权限、审计和过期。第 10 章的代码卡片应被理解为接入入口，不是完整上线清单。",
+        bullets: [
+          "至少为 user、agent、project、tenant 设计明确作用域。",
+          "提供删除和更正入口，而不是只追加记忆。",
+          "为自动写入设置阈值、黑名单或人工审查。",
+          "记录 memory 来源，方便解释、回滚和排错。",
+        ],
+      },
+    ],
+    architectureNotes: [
+      "优先选择与你现有 agent 架构同层的库：已有 LangGraph 就优先看 LangMem，已有 LlamaIndex 就优先看其 memory blocks。",
+      "如果需要快速加长期偏好记忆，memory service 比完整 runtime 更轻。",
+      "如果需要长期人格、核心设定和档案记忆，stateful runtime 更合适。",
+      "如果业务核心是关系和时间变化，Graphiti / Cognee 类图谱路线值得优先评估。",
+      "如果 memory 必须被人审阅、迁移和版本管理，本地优先路线比黑盒向量库更合适。",
+      "接入任何库之前，都先画出写入、存储、召回、注入、删除五条路径。",
+    ],
+    metrics: [
+      "接入成本：能否用 1-2 个 API 加到现有 agent",
+      "存储可控性：是否支持本地、自托管、云端或混合部署",
+      "召回质量：是否支持语义、关键词、图谱、时间和重排",
+      "上下文注入：是否提供 update_context / blocks / prompt formatting",
+      "治理能力：是否支持删除、更正、scope、审计和冲突处理",
+      "生态适配：是否适配 LangGraph、LlamaIndex、AutoGen、MCP 或现有工具链",
+    ],
+    failureModes: [
+      "只复制 quickstart，没有设计 user_id / session_id / project_id，导致记忆串线",
+      "把 search 返回结果原样塞进 prompt，造成上下文噪声和 token 浪费",
+      "把研究型实现当生产服务用，忽略多租户、权限、可观测和迁移",
+      "在关系不复杂的场景强上图谱，增加抽取、消歧和维护成本",
+      "只支持新增记忆，不支持更正和删除，长期运行后污染不可控",
+      "把框架接口误以为完整方案，忘了写入策略和预算分配仍在业务层",
     ],
   },
 ];

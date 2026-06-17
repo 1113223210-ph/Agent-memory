@@ -9,6 +9,7 @@ import { MechanismDetailDialog } from "@/components/mechanism-detail-dialog";
 import { ProjectComparisonTable } from "@/components/project-comparison-table";
 import { ImplementationRouteMap } from "@/components/implementation-route-map";
 import { PlainMechanismGuide } from "@/components/plain-mechanism-guide";
+import { LibraryUsageCards } from "@/components/library-usage-cards";
 
 export function DetailShell({ dimension }: { dimension: Dimension }) {
   const [activeMechanismKey, setActiveMechanismKey] = useState<string | null>(null);
@@ -22,6 +23,7 @@ export function DetailShell({ dimension }: { dimension: Dimension }) {
     ? dimensions[currentIndex + 1]
     : null;
   const isProjectComparisonPage = Boolean(dimension.projectComparisons);
+  const isLibraryGuidePage = Boolean(dimension.libraryUsageCards);
 
   return (
     <>
@@ -68,7 +70,7 @@ export function DetailShell({ dimension }: { dimension: Dimension }) {
           </div>
         </section>
 
-        {!isProjectComparisonPage ? (
+        {!isProjectComparisonPage && !isLibraryGuidePage ? (
           <>
             <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
               <div className="glass-card rounded-[1.75rem] p-6">
@@ -188,24 +190,30 @@ export function DetailShell({ dimension }: { dimension: Dimension }) {
         </>
       ) : null}
 
-      <section className="space-y-6">
-        <div>
-          <div className="text-xs uppercase tracking-[0.24em] text-zinc-500">
-            {isProjectComparisonPage ? "Implementation Routes" : "Mechanisms"}
+      {dimension.libraryUsageCards ? (
+        <LibraryUsageCards items={dimension.libraryUsageCards} />
+      ) : null}
+
+      {!isLibraryGuidePage ? (
+        <section className="space-y-6">
+          <div>
+            <div className="text-xs uppercase tracking-[0.24em] text-zinc-500">
+              {isProjectComparisonPage ? "Implementation Routes" : "Mechanisms"}
+            </div>
+            <h2 className="mt-3 text-3xl font-semibold text-white">
+              {isProjectComparisonPage ? "几类典型开源实现路线" : "扩展机制与细部取舍"}
+            </h2>
           </div>
-          <h2 className="mt-3 text-3xl font-semibold text-white">
-            {isProjectComparisonPage ? "几类典型开源实现路线" : "扩展机制与细部取舍"}
-          </h2>
-        </div>
-        <MechanismGrid accent={dimension.accent} items={dimension.mechanisms} />
-      </section>
+          <MechanismGrid accent={dimension.accent} items={dimension.mechanisms} />
+        </section>
+      ) : null}
 
       <section className="section-shell rounded-[1.75rem] p-6">
         <div className="text-xs uppercase tracking-[0.24em] text-zinc-500">
-          {isProjectComparisonPage ? "Project Readings" : "Examples"}
+          {isProjectComparisonPage || isLibraryGuidePage ? "Project Readings" : "Examples"}
         </div>
         <h2 className="mt-3 text-3xl font-semibold text-white">
-          {isProjectComparisonPage ? "几个代表项目怎么读" : "把这一章放进真实场景里看"}
+          {isProjectComparisonPage || isLibraryGuidePage ? "几个代表项目怎么读" : "把这一章放进真实场景里看"}
         </h2>
         <div className="mt-5 grid gap-4 xl:grid-cols-2">
           {dimension.examples.map((example) => (
@@ -226,11 +234,13 @@ export function DetailShell({ dimension }: { dimension: Dimension }) {
       <section className="section-shell rounded-[1.75rem] p-6">
         <div className="text-xs uppercase tracking-[0.24em] text-zinc-500">Architecture Notes</div>
         <h2 className="mt-3 text-3xl font-semibold text-white">
-          {isProjectComparisonPage ? "从源码实现角度看这些项目" : "从系统设计角度看这个维度"}
+          {isProjectComparisonPage || isLibraryGuidePage ? "从源码实现角度看这些项目" : "从系统设计角度看这个维度"}
         </h2>
         <p className="mt-4 max-w-4xl text-sm leading-8 text-zinc-300">
           {isProjectComparisonPage
             ? "这一部分补充的是更偏源码阅读的判断方法：不只看项目有没有 memory 字样，而是看它到底把写入、读取、存储、上下文注入和治理放在了哪一层。"
+            : isLibraryGuidePage
+              ? "这一部分补充的是更偏接入落地的判断方法：不只看库名和 star 数，而是看它提供什么 API、依赖什么后端、接入后需要自己补哪些治理能力。"
             : "这一部分补充的是更偏 memory system design 的视角：不只看概念本身，而是看这些机制在真实系统里应该放在哪一层、如何被组织、如何被观测。"}
         </p>
 
@@ -249,7 +259,7 @@ export function DetailShell({ dimension }: { dimension: Dimension }) {
       <section className="section-shell rounded-[1.75rem] p-6">
         <div className="text-xs uppercase tracking-[0.24em] text-zinc-500">Misconceptions</div>
         <h2 className="mt-3 text-3xl font-semibold text-white">
-          {isProjectComparisonPage ? "读开源 memory 项目时最容易误判的地方" : "这一章最容易被误解的地方"}
+          {isProjectComparisonPage || isLibraryGuidePage ? "读开源 memory 项目时最容易误判的地方" : "这一章最容易被误解的地方"}
         </h2>
         <div className="mt-5 grid gap-4 md:grid-cols-3">
           {dimension.misconceptions.map((item) => (
@@ -267,7 +277,7 @@ export function DetailShell({ dimension }: { dimension: Dimension }) {
         <div>
           <div className="text-xs uppercase tracking-[0.24em] text-zinc-500">Deep Dive</div>
           <h2 className="mt-3 text-3xl font-semibold text-white">
-            {isProjectComparisonPage ? "源码路线解析" : "展开理解这个维度"}
+            {isProjectComparisonPage || isLibraryGuidePage ? "源码路线解析" : "展开理解这个维度"}
           </h2>
         </div>
 
