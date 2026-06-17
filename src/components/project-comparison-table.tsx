@@ -2,36 +2,9 @@ import type { ProjectComparison } from "@/content/memory-content";
 
 const focusLabels = ["写入入口", "长期持久化", "召回注入", "治理风险"];
 
-function FieldBlock({
-  label,
-  children,
-  subtle = false,
-}: {
-  label: string;
-  children: React.ReactNode;
-  subtle?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-2xl border p-4 ${
-        subtle ? "border-zinc-800 bg-zinc-950/45" : "border-cyan-500/15 bg-cyan-500/[0.04]"
-      }`}
-    >
-      <div
-        className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${
-          subtle ? "text-zinc-500" : "text-cyan-200/80"
-        }`}
-      >
-        {label}
-      </div>
-      <div className="mt-3 text-sm leading-8 text-zinc-300">{children}</div>
-    </div>
-  );
-}
-
 function SourcePaths({ paths, subtle = false }: { paths: string[]; subtle?: boolean }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="mt-3 flex flex-wrap gap-2">
       {paths.map((path) => (
         <code
           key={path}
@@ -48,61 +21,124 @@ function SourcePaths({ paths, subtle = false }: { paths: string[]; subtle?: bool
   );
 }
 
-function ProjectCard({ item, subtle = false }: { item: ProjectComparison; subtle?: boolean }) {
+function MetaLabel({ children, subtle = false }: { children: React.ReactNode; subtle?: boolean }) {
   return (
-    <article
-      className={`rounded-[1.75rem] border p-5 ${
-        subtle
-          ? "border-zinc-800 bg-zinc-950/45"
-          : "border-cyan-400/25 bg-gradient-to-br from-cyan-950/35 via-zinc-950/85 to-zinc-950/75 shadow-[0_0_45px_rgba(34,211,238,0.08)]"
+    <div
+      className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${
+        subtle ? "text-zinc-500" : "text-cyan-200/80"
       }`}
     >
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="text-2xl font-semibold text-white">{item.project}</div>
-          <div
-            className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs ${
-              subtle
-                ? "border-zinc-700 bg-zinc-900/70 text-zinc-400"
-                : "border-cyan-400/35 bg-cyan-400/10 text-cyan-200"
-            }`}
-          >
-            {item.category}
-          </div>
-        </div>
-        <div
-          className={`rounded-2xl border px-3 py-2 text-[11px] uppercase tracking-[0.2em] ${
-            subtle
-              ? "border-zinc-800 bg-zinc-950/70 text-zinc-500"
-              : "border-cyan-500/20 bg-cyan-500/5 text-cyan-100/80"
-          }`}
-        >
-          {subtle ? "Reference" : "Core"}
-        </div>
-      </div>
-
-      <div className="mt-5">
-        <SourcePaths paths={item.corePaths} subtle={subtle} />
-      </div>
-
-      <div className="mt-5 grid gap-4 xl:grid-cols-2">
-        <FieldBlock label="Route" subtle={subtle}>{item.route}</FieldBlock>
-        <FieldBlock label="Storage" subtle={subtle}>{item.storage}</FieldBlock>
-        <FieldBlock label="Write" subtle={subtle}>{item.writePath}</FieldBlock>
-        <FieldBlock label="Read" subtle={subtle}>{item.readPath}</FieldBlock>
-        <FieldBlock label="Best Fit" subtle={subtle}>{item.bestFit}</FieldBlock>
-        <FieldBlock label="Risk" subtle={subtle}>{item.risk}</FieldBlock>
-      </div>
-    </article>
+      {children}
+    </div>
   );
 }
 
-function ProjectCardGrid({ items, subtle = false }: { items: ProjectComparison[]; subtle?: boolean }) {
+function StackedCell({
+  sections,
+  subtle = false,
+}: {
+  sections: Array<{ label: string; value: React.ReactNode }>;
+  subtle?: boolean;
+}) {
   return (
-    <div className="grid gap-5">
-      {items.map((item) => (
-        <ProjectCard key={item.project} item={item} subtle={subtle} />
+    <div className="space-y-5">
+      {sections.map((section) => (
+        <div key={section.label}>
+          <MetaLabel subtle={subtle}>{section.label}</MetaLabel>
+          <div className="mt-2 text-sm leading-8 text-zinc-300">{section.value}</div>
+        </div>
       ))}
+    </div>
+  );
+}
+
+function ComparisonTable({
+  items,
+  subtle = false,
+}: {
+  items: ProjectComparison[];
+  subtle?: boolean;
+}) {
+  return (
+    <div
+      className={`overflow-hidden rounded-3xl border ${
+        subtle
+          ? "border-zinc-800 bg-zinc-950/45"
+          : "border-cyan-400/30 bg-gradient-to-br from-cyan-950/30 via-zinc-950/85 to-zinc-950/75 shadow-[0_0_45px_rgba(34,211,238,0.08)]"
+      }`}
+    >
+      <table className="w-full table-fixed border-collapse text-left">
+        <thead className={subtle ? "bg-zinc-900/80" : "bg-cyan-950/55"}>
+          <tr>
+            {[
+              ["Project", "w-[16%]"],
+              ["Route / Source", "w-[28%]"],
+              ["Write / Read", "w-[30%]"],
+              ["Storage / Fit / Risk", "w-[26%]"],
+            ].map(([label, width]) => (
+              <th
+                key={label}
+                className={`${width} border-b px-4 py-4 text-[11px] font-semibold uppercase tracking-[0.18em] ${
+                  subtle ? "border-zinc-800 text-zinc-500" : "border-cyan-500/25 text-cyan-100"
+                }`}
+              >
+                {label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr
+              key={item.project}
+              className={`border-b align-top last:border-b-0 ${
+                subtle ? "border-zinc-900/80" : "border-cyan-950/80"
+              }`}
+            >
+              <td className="px-4 py-5">
+                <div className="text-lg font-semibold text-white">{item.project}</div>
+                <div
+                  className={`mt-3 inline-flex rounded-full border px-2.5 py-1 text-[11px] ${
+                    subtle
+                      ? "border-zinc-700 bg-zinc-900/70 text-zinc-400"
+                      : "border-cyan-400/35 bg-cyan-400/10 text-cyan-200"
+                  }`}
+                >
+                  {item.category}
+                </div>
+              </td>
+              <td className="px-4 py-5">
+                <StackedCell
+                  subtle={subtle}
+                  sections={[
+                    { label: "Route", value: item.route },
+                    { label: "Core Paths", value: <SourcePaths paths={item.corePaths} subtle={subtle} /> },
+                  ]}
+                />
+              </td>
+              <td className="px-4 py-5">
+                <StackedCell
+                  subtle={subtle}
+                  sections={[
+                    { label: "Write", value: item.writePath },
+                    { label: "Read", value: item.readPath },
+                  ]}
+                />
+              </td>
+              <td className="px-4 py-5">
+                <StackedCell
+                  subtle={subtle}
+                  sections={[
+                    { label: "Storage", value: item.storage },
+                    { label: "Best Fit", value: item.bestFit },
+                    { label: "Risk", value: item.risk },
+                  ]}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -129,7 +165,7 @@ export function ProjectComparisonTable({ items }: { items: ProjectComparison[] }
           ))}
         </div>
         <div className="mt-6">
-          <ProjectCardGrid items={primaryItems} />
+          <ComparisonTable items={primaryItems} />
         </div>
       </div>
 
@@ -138,7 +174,7 @@ export function ProjectComparisonTable({ items }: { items: ProjectComparison[] }
           <div className="text-xs uppercase tracking-[0.24em] text-zinc-500">Secondary References</div>
           <h3 className="mt-3 text-2xl font-semibold text-zinc-100">框架与接口型 memory 参考</h3>
           <div className="mt-5">
-            <ProjectCardGrid items={secondaryItems} subtle />
+            <ComparisonTable items={secondaryItems} subtle />
           </div>
         </div>
       ) : null}
